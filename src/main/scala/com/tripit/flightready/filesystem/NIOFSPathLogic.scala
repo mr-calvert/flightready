@@ -3,35 +3,19 @@ package com.tripit.flightready.filesystem
 import scala.language.higherKinds
 import scala.util.control.NonFatal
 
-import java.nio.file.{FileSystem, Path, FileSystems}
+import java.nio.file.{FileSystem, Path}
 
 import cats.Applicative
 import cats.effect.Sync
 
 import com.tripit.flightready.util.ThunkWrap
-import com.tripit.flightready.util.TaggedNewtype._
 
-
-object NIOFilesystemTypes {
-  /** Defines a singular `P`, `PF`, and `FS` types scoped to Java's
-    * default [[FileSystem]].
-    *
-    * `default.P` and `default.PF` are dependent types, tied to this
-    * instance of NIOFilesystemTypes. All instances of [[FSPath]] and
-    * [[FSPathLogic]] built on the default Java `FileSystem` instance
-    * should use **this** instance of NIOFilesystemTypes. Doing so
-    * will ensure `P` values returned from one `FSPath`/`FSPathLogic`
-    * IO instance will type check when passed to other IO instances,
-    * so long as they are all built on this `NIOFilesystemTypes`.
-    */
-  val default = new NIOFilesystemTypes(FileSystems.getDefault)
-}
 
 object NIOFSPathLogic {
   def forDefaultFS[F[_]: Sync]: FSPathLogic.Module[F] =
-    NIOFSPathLogic[F](NIOFilesystemTypes.default)
+    NIOFSPathLogic[F](NIOFSPathTypes.default)
 
-  def apply[F[_]: Sync](fsTypes: NIOFilesystemTypes): FSPathLogic.Module[F] =
+  def apply[F[_]: Sync](fsTypes: NIOFSPathTypes): FSPathLogic.Module[F] =
     new FSPathLogic.Module[F] {
       type FS = fsTypes.FS
       type P = fsTypes.P
@@ -39,20 +23,6 @@ object NIOFSPathLogic {
       val fsPathLogicIO: FSPathLogic[F, P] = new NIOFSPathLogic[F, P](fsTypes.fs)
     }
 }
-
-// TODO: test failure to compile when mixing Ps between IO instances
-/** Wraps a [[FileSystem]] instance and declares a `P` with a
-  * dependently typed tag to prevent [[Path]]s from different file
-  * systems from being used with the wrong IO instance. */
-class NIOFilesystemTypes(val fs: FileSystem) extends FSPath.FSTypes {
-  trait InstanceTag
-
-  type FS = FileSystem
-  type P = Path @@ InstanceTag
-
-  def tag(p: Path): P = p.asInstanceOf[P]
-}
-
 
 /** Interprets [[FSPathLogic]] by deference to
   * [[java.nio.file.FileSystem]] and friends. */
@@ -97,10 +67,11 @@ class NIOFSPathLogic[F[_]: Sync, P <: Path](val fs: FileSystem)
     }
 }
 
-object NIOFSPath {
-  def forDefaultFS[F[_]: Applicative]: FSPath.Module[F] = NIOFSPath[F](NIOFilesystemTypes.default)
 
-  def apply[F[_]: Applicative](fsTypes: NIOFilesystemTypes): FSPath.Module[F] =
+object NIOFSPath {
+  def forDefaultFS[F[_]: Applicative]: FSPath.Module[F] = NIOFSPath[F](NIOFSPathTypes.default)
+
+  def apply[F[_]: Applicative](fsTypes: NIOFSPathTypes): FSPath.Module[F] =
     new FSPath.Module[F] {
       type FS = FileSystem
       type P = fsTypes.P

@@ -36,7 +36,7 @@ import scala.language.higherKinds
   * model partiality and failure to preserve legality.
   */
 object FSPathLogic {
-  trait Module[F[_]] extends FSPath.FSTypes {
+  trait Module[F[_]] extends FSPathTypes {
     def fsPathLogicIO: FSPathLogic[F, P]
   }
 
@@ -44,14 +44,15 @@ object FSPathLogic {
   case object NoFilename extends Exception
 }
 
+// TODO: [[casts.Order]] for paths
 // TODO: define laws for [[FSPathLogic]] by reading docs
 // TODO: use tut for compiled and typechecked code snippets in doc comments
 /** Manipulates Strings and paths in the context of a specific file
-  * system's semantics.
+  * system's path semantics.
   *
   * Regarding the name [[FSPathLogic]], the usual "IO" suffix has
-  * been replaced with "Logic" to denote this algebra is defines only
-  * pure computations. `F` needs to
+  * been replaced with "Logic" to denote this algebra defines only
+  * pure computations.
   *
   * This algebra largely recapitulates the [[java.nio.file.Path]]
   * interface in all its messy glory. `Path` is NOT a model of clean
@@ -65,7 +66,7 @@ object FSPathLogic {
   * to/from [[java.io.File]], and watching files for changes. Elided
   * operations involve datatypes we're avoiding and real IO.
   */
-trait FSPathLogic[F[_], P] {
+trait FSPathLogic[F[_], P] extends FSPath[F, P] {
   /** Lift a String into a P, failing if the file system doesn't like
     * the cut of its jib. */
   def path(p: String): F[P]
@@ -139,26 +140,13 @@ trait FSPathLogic[F[_], P] {
 }
 
 object FSPath {
-  trait Module[F[_]] extends FSTypes {
+  trait Module[F[_]] extends FSPathTypes {
     def fsPathIO: FSPath[F, P]
-  }
-
-  trait FSTypes {
-    /** Type for reifying file system specific path semantics */
-    type FS
-
-    /** Opaque representation of a path */
-    type P
-
-    /** Give `P` a fake type parameter so we can declare `Foldable`
-      * instances for it.
-      */
-    type PF[X] = P
   }
 }
 
-/** Wrapping the fragment of [[java.nio.file.Path]] that is pure (or
-  * can reasonably be made) total.
+/** Wrapping the fragment of [[java.nio.file.Path]] that is pure
+  * and/(or can reasonably be made) total.
   *
   * The `Path` API includes a bunch of partial getters where a
   * reasonable interpretation of the docs shows failure can be
@@ -170,7 +158,7 @@ object FSPath {
   * `Option` encodings are avoided where the `Path` API allows non
   * deterministic/arbitrary failures.
   *
-  * `F` is allowed to be eager and does NOT need to handle errors.
+  * `F` is allowed to be eager and does NOT need to encode errors.
   * Thus `Id` is allowed.
   */
 trait FSPath[F[_], P] {
