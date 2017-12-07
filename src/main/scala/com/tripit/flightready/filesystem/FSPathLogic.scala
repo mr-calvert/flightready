@@ -37,13 +37,14 @@ import scala.language.higherKinds
   */
 object FSPathLogic {
   trait Module[F[_]] extends FSPathTypes {
-    def fsPathLogicIO: FSPathLogic[F, P]
+    def fsPathLogic: FSPathLogic[F, P]
   }
 
   case object NoParent extends Exception
   case object NoFilename extends Exception
 }
 
+// TODO: add links to relevant methods on FileSystem and Path
 // TODO: [[casts.Order]] for paths
 // TODO: define laws for [[FSPathLogic]] by reading docs
 // TODO: use tut for compiled and typechecked code snippets in doc comments

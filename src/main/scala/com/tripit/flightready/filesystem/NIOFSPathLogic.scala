@@ -20,7 +20,7 @@ object NIOFSPathLogic {
       type FS = fsTypes.FS
       type P = fsTypes.P
 
-      val fsPathLogicIO: FSPathLogic[F, P] = new NIOFSPathLogic[F, P](fsTypes.fs)
+      val fsPathLogic: FSPathLogic[F, P] = new NIOFSPathLogic[F, P](fsTypes.fs)
     }
 }
 
