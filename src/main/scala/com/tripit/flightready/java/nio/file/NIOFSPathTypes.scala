@@ -1,4 +1,4 @@
-package com.tripit.flightready.filesystem
+package com.tripit.flightready.java.nio.file
 
 import java.nio.file.{FileSystems, FileSystem, Path}
 

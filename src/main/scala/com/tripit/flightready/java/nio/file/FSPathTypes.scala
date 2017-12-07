@@ -1,4 +1,4 @@
-package com.tripit.flightready.filesystem
+package com.tripit.flightready.java.nio.file
 
 /** Establishes opaque file system path types `P` and `PF` scoped
   * within file system semantics determined by `FS`.

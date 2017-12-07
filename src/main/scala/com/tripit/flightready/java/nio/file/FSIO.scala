@@ -1,4 +1,4 @@
-package com.tripit.flightready.filesystem
+package com.tripit.flightready.java.nio.file
 
 import java.nio.file.attribute.FileTime
 
@@ -135,5 +135,3 @@ trait FSReadIO[F[_], P] {
 
   // TODO: getFileStore... a naked FileStore is a bad thing so it too needs to be wrapped, question is do we make it opaque and provide an algebra or do we inject a FileStore algebra inside? Or both
 }
-
-// TODO: design decisions around all the different ways to interact with open files, here and otherwise
