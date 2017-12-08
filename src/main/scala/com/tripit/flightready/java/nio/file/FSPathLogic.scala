@@ -5,7 +5,7 @@ import scala.language.higherKinds
 import com.tripit.flightready.integration.category.Order
 
 
-// TODO: combine the comments for the object and the trait and uncomment the object, maybe the top comment moves to package
+// TODO: combine the comments for the object and the trait and uncomment the object, maybe the top comment moves to package, add a comment that the `P`s are in the interface because Path is immutable
 /** Principled file system path manipulation.
   *
   * Java presents a messy but comprehensive suite of tools for
