@@ -19,10 +19,10 @@ trait FSIO[F[_], P] extends FSReadIO[F, P] with FSWriteIO[F, P] {
 
 trait FSWriteIO[F[_], P] {
   // TODO: doc comment including link back to Files method doc
-  def copy(src: P, dst: P): F[P] // TODO: add CopyAttributes parameter
+  def copy(src: P, dst: P, options: CopyOption*): F[P]
 
   // TODO: doc comment including link back to Files method doc
-  def move(src: P, dst: P): F[P] // TODO: add CopyAttributes parameter
+  def move(src: P, dst: P, options: MoveOption*): F[P]
 
   // TODO: doc comment including link back to Files method doc
   def createDirectories(p: P): F[P] // TODO: add FileAttribute parameter
@@ -142,4 +142,17 @@ trait FSReadIO[F[_], P] {
   def onInputStreamS[S[_[_], _], X](p: P)(s: InputStreamIO[F] => S[F, X])(implicit rs: ResourceSafety[S, F]): S[F, X]
 
   // TODO: getFileStore... a naked FileStore is a bad thing so it too needs to be wrapped, question is do we make it opaque and provide an algebra or do we inject a FileStore algebra inside? Or both
+}
+
+sealed trait CopyOption
+object CopyOption {
+  case object ReplaceExisting extends CopyOption
+  case object CopyAttributes extends CopyOption
+  case object NoFollowLinks extends CopyOption
+}
+
+sealed trait MoveOption
+object MoveOption {
+  case object ReplaceExisting extends MoveOption
+  case object AtomicMove extends MoveOption
 }
