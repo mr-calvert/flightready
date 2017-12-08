@@ -2,6 +2,9 @@ package com.tripit.flightready.java.nio.file
 
 import java.nio.file.attribute.FileTime
 
+import com.tripit.flightready.integration.streaming.ResourceSafety
+import com.tripit.flightready.java.io.InputStreamIO
+
 import scala.language.higherKinds
 
 object FSIO {
@@ -63,6 +66,8 @@ trait FSWriteIO[F[_], P] {
 }
 
 trait FSReadIO[F[_], P] {
+  // TODO: add java.nio.file.Path methods that do IO to operate on Paths
+
   // TODO: doc comment including link back to Files method doc
   def isSameFile(pl: P, pr: P): F[Boolean]
 
@@ -131,7 +136,10 @@ trait FSReadIO[F[_], P] {
 
   // TODO: newBufferedReader... algebra open buffered reader algebra executor and stream interface, needs a smart way of expressing CharSet, should also support byte streaming
 
-  // TODO: newInputStream... needs a nice InputStream algebra and an OpenOptions interface
+  // TODO: doc comment including link back to Files method doc and discussion about FP semantics retrofit
+  // TODO: add OpenOptions parameter
+  def onInputStreamF[X](p: P)(run: InputStreamIO[F] => F[X]): F[X]
+  def onInputStreamS[S[_[_], _], X](p: P)(s: InputStreamIO[F] => S[F, X])(implicit rs: ResourceSafety[S, F]): S[F, X]
 
   // TODO: getFileStore... a naked FileStore is a bad thing so it too needs to be wrapped, question is do we make it opaque and provide an algebra or do we inject a FileStore algebra inside? Or both
 }
