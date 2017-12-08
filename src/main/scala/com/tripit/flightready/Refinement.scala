@@ -1,4 +1,4 @@
-package com.tripit.flightready.util
+package com.tripit.flightready
 
 /** Typeclass connecting a base type `B` to refined type `R` through a value level predicate.
   *

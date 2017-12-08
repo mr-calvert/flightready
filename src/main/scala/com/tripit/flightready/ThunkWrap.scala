@@ -1,4 +1,4 @@
-package com.tripit.flightready.util
+package com.tripit.flightready
 
 import cats.Applicative
 
