@@ -2,6 +2,9 @@ package com.tripit.flightready.java.nio.file
 
 import scala.language.higherKinds
 
+import com.tripit.flightready.integration.category.Order
+
+
 // TODO: combine the comments for the object and the trait and uncomment the object, maybe the top comment moves to package
 /** Principled file system path manipulation.
   *
@@ -45,7 +48,6 @@ object FSPathLogic {
 }
 
 // TODO: add links to relevant methods on FileSystem and Path
-// TODO: [[casts.Order]] for paths
 // TODO: define laws for [[FSPathLogic]] by reading docs
 // TODO: use tut for compiled and typechecked code snippets in doc comments
 /** Manipulates Strings and paths in the context of a specific file
@@ -163,6 +165,8 @@ object FSPath {
   * Thus `Id` is allowed.
   */
 trait FSPath[F[_], P] {
+  def orderTC: Order[P]
+
   def string(p: P): F[String]
 
   /** When `other` is absolute just returns `other`.

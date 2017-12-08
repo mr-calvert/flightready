@@ -8,6 +8,7 @@ import java.nio.file.{FileSystem, Path}
 import cats.Applicative
 import cats.effect.Sync
 
+import com.tripit.flightready.integration.category.Order
 import com.tripit.flightready.util.ThunkWrap
 
 
@@ -82,6 +83,11 @@ object NIOFSPath {
 
 class NIOFSPath[F[_], P <: Path](tw: ThunkWrap[F]) extends FSPath[F, P] {
   def string(p: P): F[String] = tw.wrap(p.toString)
+
+  def orderTC: Order[P] =
+    new Order[P] {
+      def compare(l: => P, r: => P): Int = l.compareTo(r)
+    }
 
   def resolve(base: P, other: P): F[P] =
     tw.wrap(tag(base.resolve(other)))
