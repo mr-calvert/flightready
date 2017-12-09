@@ -1,7 +1,8 @@
 package com.tripit.flightready.java.nio.file
 
-import scala.language.higherKinds
+import com.tripit.flightready.IsoImmutableUnsafe
 
+import scala.language.higherKinds
 import com.tripit.flightready.integration.category.Order
 
 
@@ -45,6 +46,21 @@ object FSPathLogic {
 
   case object NoParent extends Exception
   case object NoFilename extends Exception
+}
+
+object IsoFSPathLogic {
+  /** Extended interface for interpreters based on live
+    * [[java.nio.file.Path]]
+    *
+    * Interpreters which do not hold live `Path` instances shall
+    * implement [[FSPathLogic.Module]], NOT this.
+    *
+    * The addition of `IsoImmutableUnsafe` gives one the ability to
+    * inject and extract
+    */
+  trait Module[F[_]] extends FSPathLogic.Module[F] {
+    def isoImmutableUnsafe: IsoImmutableUnsafe[P, java.nio.file.Path]
+  }
 }
 
 // TODO: add links to relevant methods on FileSystem and Path
@@ -145,6 +161,12 @@ trait FSPathLogic[F[_], P] extends FSPath[F, P] {
 object FSPath {
   trait Module[F[_]] extends FSPathTypes {
     def fsPathIO: FSPath[F, P]
+  }
+}
+
+object IsoFSPath {
+  trait Module[F[_]] extends FSPath.Module[F] {
+    def isoImmutableUnsafe: IsoImmutableUnsafe[P, java.nio.file.Path]
   }
 }
 

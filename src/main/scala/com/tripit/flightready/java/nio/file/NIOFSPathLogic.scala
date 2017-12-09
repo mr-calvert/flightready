@@ -2,26 +2,29 @@ package com.tripit.flightready.java.nio.file
 
 import scala.language.higherKinds
 import scala.util.control.NonFatal
-
 import java.nio.file.{FileSystem, Path}
 
 import cats.Applicative
 import cats.effect.Sync
-
+import com.tripit.flightready.{ThunkWrap, IsoImmutableUnsafe}
 import com.tripit.flightready.integration.category.Order
-import com.tripit.flightready.util.ThunkWrap
 
 
 object NIOFSPathLogic {
-  def forDefaultFS[F[_]: Sync]: FSPathLogic.Module[F] =
+  def forDefaultFS[F[_]: Sync]: IsoFSPathLogic.Module[F] =
     NIOFSPathLogic[F](NIOFSPathTypes.default)
 
-  def apply[F[_]: Sync](fsTypes: NIOFSPathTypes): FSPathLogic.Module[F] =
-    new FSPathLogic.Module[F] {
+  def apply[F[_]: Sync](fsTypes: NIOFSPathTypes): IsoFSPathLogic.Module[F] =
+    new IsoFSPathLogic.Module[F] {
       type FS = fsTypes.FS
       type P = fsTypes.P
 
       val fsPathLogic: FSPathLogic[F, P] = new NIOFSPathLogic[F, P](fsTypes.fs)
+      val isoImmutableUnsafe: IsoImmutableUnsafe[fsTypes.P, Path] =
+        new IsoImmutableUnsafe[fsTypes.P, Path] {
+          def toOpaque(p: Path): fsTypes.P = fsTypes.tag(p)
+          def toImmutable(p: fsTypes.P): Path = p
+        }
     }
 }
 
@@ -70,14 +73,15 @@ class NIOFSPathLogic[F[_]: Sync, P <: Path](val fs: FileSystem)
 
 
 object NIOFSPath {
-  def forDefaultFS[F[_]: Applicative]: FSPath.Module[F] = NIOFSPath[F](NIOFSPathTypes.default)
+  def forDefaultFS[F[_]: Applicative]: IsoFSPath.Module[F] = NIOFSPath[F](NIOFSPathTypes.default)
 
-  def apply[F[_]: Applicative](fsTypes: NIOFSPathTypes): FSPath.Module[F] =
-    new FSPath.Module[F] {
+  def apply[F[_]: Applicative](fsTypes: NIOFSPathTypes): IsoFSPath.Module[F] =
+    new IsoFSPath.Module[F] {
       type FS = FileSystem
       type P = fsTypes.P
 
       val fsPathIO: FSPath[F, fsTypes.P] = new NIOFSPath[F, fsTypes.P](ThunkWrap.intoPure[F])
+      val isoImmutableUnsafe: IsoImmutableUnsafe[fsTypes.P, Path] = ???
     }
 }
 
