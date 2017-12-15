@@ -30,6 +30,7 @@ object NIOFSPathLogic {
 
 /** Interprets [[FSPathLogic]] by deference to
   * [[java.nio.file.FileSystem]] and friends. */
+// TODO: introduce a SuspendWrap typeclass
 class NIOFSPathLogic[F[_]: Sync, P <: Path](val fs: FileSystem)
       extends NIOFSPath[F, P](ThunkWrap.DelayInSync[F]) with FSPathLogic[F, P] {
 
