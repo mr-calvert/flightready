@@ -49,18 +49,18 @@ trait BufferIO[F[_], A] {
 }
 
 object BufferIO {
-  trait Module[F[_], BIO[_[_]]] {
+  trait Module[F[_], BIO[_[_]], A] {
     def allocate(capacity: Int): F[BIO[F]]
-    def allocateDirect(capacity: Int): F[BIO[F]]
-
-    def wrap(bytes: Array[Byte]): BIO[F]
-    def wrap(bytes: Array[Byte], ofs: Int, len: Int): BIO[F]
+    def wrap(bytes: Array[A]): BIO[F]
+    def wrap(bytes: Array[A], ofs: Int, len: Int): BIO[F]
   }
 }
 
 
 object ByteBufferIO {
-  trait Module[F[_]] extends BufferIO.Module[F, ByteBufferIO]
+  trait Module[F[_]] extends BufferIO.Module[F, ByteBufferIO, Byte] {
+    def allocateDirect(capacity: Int): F[ByteBufferIO[F]]
+  }
 }
 object IsoByteBufferIO {
   trait Module[F[_]] extends ByteBufferIO.Module[F] with IsoMutable[ByteBufferIO[F], java.nio.ByteBuffer]
@@ -104,7 +104,7 @@ trait ByteBufferIO[F[_]] extends BufferIO[F, Byte] {
 
 
 object CharBufferIO {
-  trait Module[F[_]] extends BufferIO.Module[F, CharBufferIO] {
+  trait Module[F[_]] extends BufferIO.Module[F, CharBufferIO, Char] {
     def wrap(csq: CharSequence): CharBufferReadIO[F]
     def wrap(csq: CharSequence, start: Int, end: Int): CharBufferReadIO[F]
   }
@@ -136,7 +136,7 @@ trait CharBufferIO[F[_]] extends BufferIO[F, Char] {
 
 
 object ShortBufferIO {
-  trait Module[F[_]] extends BufferIO.Module[F, ShortBufferIO]
+  trait Module[F[_]] extends BufferIO.Module[F, ShortBufferIO, Short]
 }
 object IsoShortBufferIO {
   trait Module[F[_]] extends ShortBufferIO.Module[F] with IsoMutable[ShortBufferIO[F], java.nio.ShortBuffer]
@@ -155,7 +155,7 @@ trait ShortBufferIO[F[_]] extends BufferIO[F, Short] {
 
 
 object IntBufferIO {
-  trait Module[F[_]] extends BufferIO.Module[F, IntBufferIO]
+  trait Module[F[_]] extends BufferIO.Module[F, IntBufferIO, Int]
 }
 object IsoIntBufferIO {
   trait Module[F[_]] extends IntBufferIO.Module[F] with IsoMutable[IntBufferIO[F], java.nio.IntBuffer]
@@ -174,7 +174,7 @@ trait IntBufferIO[F[_]] extends BufferIO[F, Int] {
 
 
 object LongBufferIO {
-  trait Module[F[_]] extends BufferIO.Module[F, LongBufferIO]
+  trait Module[F[_]] extends BufferIO.Module[F, LongBufferIO, Long]
 }
 object IsoLongBufferIO {
   trait Module[F[_]] extends LongBufferIO.Module[F] with IsoMutable[LongBufferIO[F], java.nio.LongBuffer]
@@ -193,7 +193,7 @@ trait LongBufferIO[F[_]] extends BufferIO[F, Long] {
 
 
 object FloatBufferIO {
-  trait Module[F[_]] extends BufferIO.Module[F, FloatBufferIO]
+  trait Module[F[_]] extends BufferIO.Module[F, FloatBufferIO, Float]
 }
 object IsoFloatBufferIO {
   trait Module[F[_]] extends FloatBufferIO.Module[F] {
@@ -217,7 +217,7 @@ trait FloatBufferIO[F[_]] extends BufferIO[F, Float] with FloatBufferReadIO[F] {
 
 
 object DoubleBufferIO {
-  trait Module[F[_]] extends BufferIO.Module[F, DoubleBufferIO]
+  trait Module[F[_]] extends BufferIO.Module[F, DoubleBufferIO, Double]
 }
 object IsoDoubleBufferIO {
   trait Module[F[_]] extends DoubleBufferIO.Module[F] {

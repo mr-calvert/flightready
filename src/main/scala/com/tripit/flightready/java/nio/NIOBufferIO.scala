@@ -39,18 +39,20 @@ trait NIOBufferReadIO[F[_], A] extends BufferReadIO[F, A] {
 object NIODoubleBufferReadIO {
   def apply[F[_]](implicit tw: ThunkWrap[F]): IsoDoubleBufferIO.Module[F] =
     new IsoDoubleBufferIO.Module[F] {
-      def allocate(capacity: Int): F[DoubleBufferIO[F]] = ???
-      def allocateDirect(capacity: Int): F[DoubleBufferIO[F]] = ???
+      def allocate(capacity: Int): F[DoubleBufferIO[F]] =
+        tw.wrap(new NIODoubleBufferIO[F](DoubleBuffer.allocate(capacity), tw))
 
-      def wrap(bytes: Array[Byte]): DoubleBufferIO[F] = ???
-      def wrap(bytes: Array[Byte], ofs: Int, len: Int): DoubleBufferIO[F] = ???
+      def wrap(doubles: Array[Double]): DoubleBufferIO[F] =
+        new NIODoubleBufferIO[F](DoubleBuffer.wrap(doubles), tw)
+      def wrap(doubles: Array[Double], ofs: Int, len: Int): DoubleBufferIO[F] =
+        new NIODoubleBufferIO[F](DoubleBuffer.wrap(doubles, ofs, len), tw)
 
       type IORO = NIODoubleBufferReadIO[F]
       type IORW = NIODoubleBufferIO[F]
 
       def isoMutable: IsoMutableRORW[IORO, IORW, DoubleBuffer] =
         new IsoMutableRORW[IORO, IORW, DoubleBuffer] {
-          def toMutable(io: NIODoubleBufferReadIO[F]): DoubleBuffer = ???
+          def toMutable(io: NIODoubleBufferReadIO[F]): DoubleBuffer = io.buf
           def toIORO(db: DoubleBuffer): NIODoubleBufferReadIO[F] = new NIODoubleBufferReadIO(db, tw)
           def toIORW(db: DoubleBuffer): Option[NIODoubleBufferIO[F]] =
             if (db.isReadOnly) None
