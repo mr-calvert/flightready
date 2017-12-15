@@ -81,7 +81,11 @@ object NIOFSPath {
       type P = fsTypes.P
 
       val fsPathIO: FSPath[F, fsTypes.P] = new NIOFSPath[F, fsTypes.P](ThunkWrap.intoPure[F])
-      val isoImmutableUnsafe: IsoImmutableUnsafe[fsTypes.P, Path] = ???
+      val isoImmutableUnsafe: IsoImmutableUnsafe[fsTypes.P, Path] =
+        new IsoImmutableUnsafe[fsTypes.P, Path] {
+          def toOpaque(p: Path): fsTypes.P = fsTypes.tag(p)
+          def toImmutable(p: fsTypes.P): Path = p
+        }
     }
 }
 
