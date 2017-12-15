@@ -1,5 +1,7 @@
 package com.tripit.flightready
 
+import com.tripit.flightready.java.nio.ByteBufferIO
+
 import scala.language.higherKinds
 
 /** Isomorphism between IO types and underlying mutable resources.
@@ -9,7 +11,6 @@ import scala.language.higherKinds
   *
   * Where possible mutable resources should be created using the pure
   * effect modeling provided by various FlightReady interfaces.
-  * [[com.tripit.flightready.java.nio.file.ByteBufferIO.ModuleIso]]
   * provides an example of effectful creation in its `allocate`
   * methods.
   *
@@ -31,7 +32,23 @@ import scala.language.higherKinds
   * resource. It's a bit of a whispy notion, but we ARE at the edge of
   * the world.
   */
-trait IsoMutable[IO[_[_]], F[_], R] {
-  def toIO(r: R): IO[F]
-  def toMutable(io: IO[F]): R
+trait IsoMutable[IO, R] {
+  def toIO(r: R): IO
+  def toMutable(io: IO): R
+}
+
+/** [[IsoMutable]] modified to support `R` being optionally read
+  * only.
+  *
+  * Requires a read only and read/write version of the algebra. `R`
+  * is assumed to be marked as read only with a value level flag.
+  * Thus any `R` may be converted to an `IORO` but only `R` values
+  * without the read only flag may be converted to `IORW`. As the
+  * flag is hidden at type level the conversion to IORW must be
+  * partial.
+  */
+trait IsoMutableRORW[IORO, IORW, R] {
+  def toIORO(r: R): IORO
+  def toIORW(r: R): Option[IORW]
+  def toMutable(io: IORO): R
 }
