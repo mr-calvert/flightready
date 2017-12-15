@@ -35,6 +35,13 @@ trait NIOBufferReadIO[F[_], A] extends BufferReadIO[F, A] {
   def rewind: F[Unit] = tw.wrap(buf.rewind)
 }
 
+trait NIOBufferIO[F[_], A] extends BufferIO[F, A] {
+  def buf: Buffer
+  def tw: ThunkWrap[F]
+
+  def hasArray: F[Boolean] = tw.wrap(buf.hasArray)
+  def arrayOffset: F[Int] = tw.wrap(buf.arrayOffset)
+}
 
 object NIODoubleBufferReadIO {
   def apply[F[_]](implicit tw: ThunkWrap[F]): IsoDoubleBufferIO.Module[F] =
@@ -77,9 +84,9 @@ class NIODoubleBufferReadIO[F[_]](val buf: DoubleBuffer, val tw: ThunkWrap[F])
 }
 
 class NIODoubleBufferIO[F[_]](buf: DoubleBuffer, tw: ThunkWrap[F])
-    extends NIODoubleBufferReadIO[F](buf, tw) with DoubleBufferIO[F] with PutBufferFallback[F, Double] {
-
-  def classTagA: ClassTag[Double] = classTag[Double]
+    extends NIODoubleBufferReadIO[F](buf, tw)
+      with NIOBufferIO[F, Double]
+      with DoubleBufferIO[F] {
 
   override def duplicateRO: F[DoubleBufferReadIO[F]] = tw.wrap(new NIODoubleBufferReadIO(buf.asReadOnlyBuffer, tw))
   override def sliceRO: F[DoubleBufferReadIO[F]] = tw.wrap(new NIODoubleBufferReadIO(buf.asReadOnlyBuffer.slice, tw))
@@ -87,9 +94,7 @@ class NIODoubleBufferIO[F[_]](buf: DoubleBuffer, tw: ThunkWrap[F])
   def duplicateRW: F[DoubleBufferIO[F]] = tw.wrap(new NIODoubleBufferIO(buf.duplicate, tw))
   def sliceRW: F[DoubleBufferIO[F]] = tw.wrap(new NIODoubleBufferIO(buf.slice, tw))
 
-  def hasArray: F[Boolean] = tw.wrap(buf.hasArray)
   def array: F[Array[Double]] = tw.wrap(buf.array)
-  def arrayOffset: F[Int] = tw.wrap(buf.arrayOffset)
 
   def compact: F[Unit] = tw.wrap(buf.compact)
 
@@ -98,10 +103,12 @@ class NIODoubleBufferIO[F[_]](buf: DoubleBuffer, tw: ThunkWrap[F])
   def putArraySlice(ds: Array[Double], ofs: Int, len: Int): F[Unit] = tw.wrap(buf.put(ds, ofs, len))
   def putAt(idx: Int, d: Double): F[Unit] = tw.wrap(buf.put(idx, d))
 
-  def putBuffer(in: DoubleBufferReadIO[F])(implicit fm: FlatMap[F]): F[Unit] =
+  def putBuffer(in: DoubleBufferReadIO[F])(implicit fm: FlatMap[F]): F[Unit] = {
+    val fb = new PutBufferFallback[F, Double](this, tw, fm)
     in match {
       case nio: NIODoubleBufferIO[F] => tw.wrap(buf.put(nio.buf))
-      case rwBuf: BufferIO[F, Double] @unchecked => putBufferViaBackingArray(rwBuf)
-      case in: DoubleBufferReadIO[F] => putBufferViaTempCopy(in)
+      case rwBuf: BufferIO[F, Double]@unchecked => fb.putBufferViaBackingArray(rwBuf)
+      case in: DoubleBufferReadIO[F] => fb.putBufferViaTempCopy(in)
     }
+  }
 }
