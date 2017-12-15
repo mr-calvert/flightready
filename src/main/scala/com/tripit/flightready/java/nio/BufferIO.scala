@@ -205,10 +205,10 @@ object IsoFloatBufferIO {
 }
 
 trait FloatBufferReadIO[F[_]] extends BufferReadIO[F, Float] {
-  def duplicateRO: FloatBufferReadIO[F]
-  def sliceRO: FloatBufferReadIO[F]
+  def duplicateRO: F[FloatBufferReadIO[F]]
+  def sliceRO: F[FloatBufferReadIO[F]]
 }
-trait FloatBufferIO[F[_]] extends BufferIO[F, Float] with FloatBufferReadIO[F] {
+trait FloatBufferIO[F[_]] extends FloatBufferReadIO[F] with BufferIO[F, Float] {
   def duplicateRW: F[FloatBufferIO[F]]
   def sliceRW: F[FloatBufferIO[F]]
 
