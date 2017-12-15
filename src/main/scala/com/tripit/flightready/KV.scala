@@ -1,7 +1,7 @@
 package com.tripit.flightready
 
 import scala.language.higherKinds
-import java.nio.file.Path
+import _root_.java.nio.file.Path
 
 trait KV[F[_], K, V] {
   def get(k: K): F[V]
