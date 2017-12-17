@@ -9,16 +9,12 @@ import com.tripit.flightready.java.nio.{BufferIO, BufferReadIO}
 
 class PutBufferFallback[F[_], A: ClassTag](bufIO: BufferIO[F, A], tw: ThunkWrap[F], fm: FlatMap[F]) {
   def putBufferViaBackingArray(rwBuf: BufferReadIO[F, A] with BufferIO[F, A]): F[Unit] =
-    fm.flatMap(rwBuf.hasArray) { hasArray =>
-      if(hasArray)
-        fm.flatMap(rwBuf.arrayOffset) { arrayOffset =>
-          fm.flatMap(rwBuf.remaining) { remaining =>
-            if (remaining <= 0) tw.wrap(())
-            else fm.flatMap(rwBuf.array) { bufIO.putArraySlice(_, arrayOffset, remaining) }
-          }
-        }
-      else putBufferViaTempCopy(rwBuf)
-    }
+    if(rwBuf.hasArray)
+      fm.flatMap(rwBuf.remaining) { remaining =>
+        if (remaining <= 0) tw.wrap(())
+        else bufIO.putArraySlice(rwBuf.array, rwBuf.arrayOffset, remaining)
+      }
+    else putBufferViaTempCopy(rwBuf)
 
   def putBufferViaTempCopy(in: BufferReadIO[F, A]): F[Unit] =
     fm.flatMap(in.remaining) { remaining =>
