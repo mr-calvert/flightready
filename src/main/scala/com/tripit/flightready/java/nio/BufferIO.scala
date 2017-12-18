@@ -6,14 +6,6 @@ import java.nio.ByteOrder
 import com.tripit.flightready.{IsoMutableRORW, IsoMutable}
 import com.tripit.flightready.integration.category.FlatMap
 
-object BufferIO {
-  trait Module[F[_], BIO[_[_]], A] {
-    def allocate(capacity: Int): F[BIO[F]]
-    def wrapArray(bytes: Array[A]): F[BIO[F]]
-    def wrapArraySlice(bytes: Array[A], ofs: Int, len: Int): F[BIO[F]]
-  }
-}
-
 trait BufferReadIO[F[_], A] {
   // TODO: doc comments and links back
   def capacity: Int // TODO: comment why not functor wrapped
@@ -58,15 +50,18 @@ trait BufferIO[F[_], A] {
 
 
 object ByteBufferIO {
-  trait Module[F[_]] extends BufferIO.Module[F, ByteBufferIO, Byte] {
-    def allocateDirect(capacity: Int): F[ByteBufferIO[F]]
+  trait Module[F[_]] {
+    type IORO <: ByteBufferReadIO[F]
+    type IORW <: ByteBufferIO[F]
+
+    def allocate(capacity: Int): F[IORW]
+    def allocateDirect(capacity: Int): F[IORW]
+    def wrapArray(bytes: Array[Byte]): F[IORW]
+    def wrapArraySlice(bytes: Array[Byte], ofs: Int, len: Int): F[IORW]
   }
 }
 object IsoByteBufferIO {
   trait Module[F[_]] extends ByteBufferIO.Module[F] {
-    type IORO <: ByteBufferReadIO[F]
-    type IORW <: ByteBufferIO[F]
-
     def isoMutableRORW: IsoMutableRORW[IORO, IORW, java.nio.ByteBuffer]
   }
 }
@@ -114,16 +109,21 @@ trait ByteBufferIO[F[_]] extends BufferIO[F, Byte] {
 
 
 object CharBufferIO {
-  trait Module[F[_]] extends BufferIO.Module[F, CharBufferIO, Char] {
-    def wrapCharSequence(csq: CharSequence): F[CharBufferReadIO[F]]
-    def wrapCharSequenceSlice(csq: CharSequence, start: Int, end: Int): F[CharBufferReadIO[F]]
+  trait Module[F[_]] {
+    type IORO <: CharBufferReadIO[F]
+    type IORW <: CharBufferIO[F]
+
+    def allocate(capacity: Int): F[IORW]
+
+    def wrapArray(chars: Array[Char]): F[IORW]
+    def wrapArraySlice(chars: Array[Char], ofs: Int, len: Int): F[IORW]
+
+    def wrapCharSequence(csq: CharSequence): F[IORO]
+    def wrapCharSequenceSlice(csq: CharSequence, start: Int, end: Int): F[IORO]
   }
 }
 object IsoCharBufferIO {
   trait Module[F[_]] extends CharBufferIO.Module[F] {
-    type IORO <: CharBufferReadIO[F]
-    type IORW <: CharBufferIO[F]
-
     def isoMutableRORW: IsoMutableRORW[IORO, IORW, java.nio.CharBuffer]
   }
 }
@@ -151,13 +151,18 @@ trait CharBufferIO[F[_]] extends BufferIO[F, Char] {
 
 
 object ShortBufferIO {
-  trait Module[F[_]] extends BufferIO.Module[F, ShortBufferIO, Short]
-}
-object IsoShortBufferIO {
-  trait Module[F[_]] extends ShortBufferIO.Module[F] {
+  trait Module[F[_]] {
     type IORO <: ShortBufferReadIO[F]
     type IORW <: ShortBufferIO[F]
 
+    def allocate(capacity: Int): F[IORW]
+
+    def wrapArray(shorts: Array[Short]): F[IORW]
+    def wrapArraySlice(shorts: Array[Short], ofs: Int, len: Int): F[IORW]
+  }
+}
+object IsoShortBufferIO {
+  trait Module[F[_]] extends ShortBufferIO.Module[F] {
     def isoMutableRORW: IsoMutableRORW[IORO, IORW, java.nio.ShortBuffer]
   }
 }
@@ -175,13 +180,18 @@ trait ShortBufferIO[F[_]] extends BufferIO[F, Short] {
 
 
 object IntBufferIO {
-  trait Module[F[_]] extends BufferIO.Module[F, IntBufferIO, Int]
-}
-object IsoIntBufferIO {
-  trait Module[F[_]] extends IntBufferIO.Module[F] {
+  trait Module[F[_]] {
     type IORO <: IntBufferReadIO[F]
     type IORW <: IntBufferIO[F]
 
+    def allocate(capacity: Int): F[IORW]
+
+    def wrapArray(ints: Array[Int]): F[IORW]
+    def wrapArraySlice(ints: Array[Int], ofs: Int, len: Int): F[IORW]
+  }
+}
+object IsoIntBufferIO {
+  trait Module[F[_]] extends IntBufferIO.Module[F] {
     def isoMutableRORW: IsoMutableRORW[IORO, IORW, java.nio.IntBuffer]
   }
 }
@@ -199,13 +209,18 @@ trait IntBufferIO[F[_]] extends BufferIO[F, Int] {
 
 
 object LongBufferIO {
-  trait Module[F[_]] extends BufferIO.Module[F, LongBufferIO, Long]
-}
-object IsoLongBufferIO {
-  trait Module[F[_]] extends LongBufferIO.Module[F] {
+  trait Module[F[_]] {
     type IORO <: LongBufferReadIO[F]
     type IORW <: LongBufferIO[F]
 
+    def allocate(capacity: Int): F[IORW]
+
+    def wrapArray(longs: Array[Long]): F[IORW]
+    def wrapArraySlice(longs: Array[Long], ofs: Int, len: Int): F[IORW]
+  }
+}
+object IsoLongBufferIO {
+  trait Module[F[_]] extends LongBufferIO.Module[F] {
     def isoMutable: IsoMutableRORW[IORO, IORW, java.nio.LongBuffer]
   }
 }
@@ -223,13 +238,18 @@ trait LongBufferIO[F[_]] extends BufferIO[F, Long] {
 
 
 object FloatBufferIO {
-  trait Module[F[_]] extends BufferIO.Module[F, FloatBufferIO, Float]
-}
-object IsoFloatBufferIO {
-  trait Module[F[_]] extends FloatBufferIO.Module[F] {
+  trait Module[F[_]] {
     type IORO <: FloatBufferReadIO[F]
     type IORW <: FloatBufferIO[F]
 
+    def allocate(capacity: Int): F[IORW]
+
+    def wrapArray(floats: Array[Float]): F[IORW]
+    def wrapArraySlice(floats: Array[Float], ofs: Int, len: Int): F[IORW]
+  }
+}
+object IsoFloatBufferIO {
+  trait Module[F[_]] extends FloatBufferIO.Module[F] {
     def isoMutable: IsoMutableRORW[IORO, IORW, java.nio.FloatBuffer]
   }
 }
@@ -247,13 +267,18 @@ trait FloatBufferIO[F[_]] extends FloatBufferReadIO[F] with BufferIO[F, Float] {
 
 
 object DoubleBufferIO {
-  trait Module[F[_]] extends BufferIO.Module[F, DoubleBufferIO, Double]
-}
-object IsoDoubleBufferIO {
-  trait Module[F[_]] extends DoubleBufferIO.Module[F] {
+  trait Module[F[_]] {
     type IORO <: DoubleBufferReadIO[F]
     type IORW <: DoubleBufferIO[F]
 
+    def allocate(capacity: Int): F[IORW]
+
+    def wrapArray(doubles: Array[Double]): F[IORW]
+    def wrapArraySlice(doubles: Array[Double], ofs: Int, len: Int): F[IORW]
+  }
+}
+object IsoDoubleBufferIO {
+  trait Module[F[_]] extends DoubleBufferIO.Module[F] {
     def isoMutable: IsoMutableRORW[IORO, IORW, java.nio.DoubleBuffer]
   }
 }

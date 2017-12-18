@@ -10,8 +10,8 @@ import com.tripit.flightready.java.nio.file.PutBufferFallback
 
 
 trait BufferAndWrap[F[_]] {
-  def buf: Buffer
-  def tw: ThunkWrap[F]
+  private[nio] def buf: Buffer
+  private[nio] def tw: ThunkWrap[F]
 }
 
 trait NIOBufferReadIO[F[_], A] extends BufferReadIO[F, A] { self: BufferAndWrap[F] =>
@@ -42,15 +42,15 @@ trait NIOBufferIO[F[_], A] extends BufferIO[F, A] { self: BufferAndWrap[F] =>
 object NIOByteBufferReadIO {
   def apply[F[_]](implicit tw: ThunkWrap[F]): IsoByteBufferIO.Module[F] =
     new IsoByteBufferIO.Module[F] {
-      def allocate(capacity: Int): F[ByteBufferIO[F]] =
+      def allocate(capacity: Int): F[NIOByteBufferIO[F]] =
         tw.wrap(new NIOByteBufferIO[F](ByteBuffer.allocate(capacity), tw))
 
-      def allocateDirect(capacity: Int): F[ByteBufferIO[F]] =
+      def allocateDirect(capacity: Int): F[NIOByteBufferIO[F]] =
         tw.wrap(new NIOByteBufferIO[F](ByteBuffer.allocateDirect(capacity), tw))
 
-      def wrapArray(shorts: Array[Byte]): F[ByteBufferIO[F]] =
+      def wrapArray(shorts: Array[Byte]): F[NIOByteBufferIO[F]] =
         tw.wrap(new NIOByteBufferIO[F](ByteBuffer.wrap(shorts), tw))
-      def wrapArraySlice(shorts: Array[Byte], ofs: Int, len: Int): F[ByteBufferIO[F]] =
+      def wrapArraySlice(shorts: Array[Byte], ofs: Int, len: Int): F[NIOByteBufferIO[F]] =
         tw.wrap(new NIOByteBufferIO[F](ByteBuffer.wrap(shorts, ofs, len), tw))
 
       type IORO = NIOByteBufferReadIO[F]
@@ -68,7 +68,7 @@ object NIOByteBufferReadIO {
     }
 }
 
-class NIOByteBufferReadIO[F[_]](val buf: ByteBuffer, val tw: ThunkWrap[F])
+class NIOByteBufferReadIO[F[_]](private[nio] val buf: ByteBuffer, val tw: ThunkWrap[F])
   extends NIOBufferReadIO[F, Byte] with ByteBufferReadIO[F] with BufferAndWrap[F] {
 
   def duplicateRO: F[ByteBufferReadIO[F]] = tw.wrap(new NIOByteBufferReadIO(buf.duplicate, tw))
@@ -155,17 +155,17 @@ class NIOByteBufferIO[F[_]](buf: ByteBuffer, tw: ThunkWrap[F])
 object NIOCharBufferReadIO {
   def apply[F[_]](implicit tw: ThunkWrap[F]): IsoCharBufferIO.Module[F] =
     new IsoCharBufferIO.Module[F] {
-      def allocate(capacity: Int): F[CharBufferIO[F]] =
+      def allocate(capacity: Int): F[NIOCharBufferIO[F]] =
         tw.wrap(new NIOCharBufferIO[F](CharBuffer.allocate(capacity), tw))
 
-      def wrapArray(shorts: Array[Char]): F[CharBufferIO[F]] =
+      def wrapArray(shorts: Array[Char]): F[NIOCharBufferIO[F]] =
         tw.wrap(new NIOCharBufferIO[F](CharBuffer.wrap(shorts), tw))
-      def wrapArraySlice(shorts: Array[Char], ofs: Int, len: Int): F[CharBufferIO[F]] =
+      def wrapArraySlice(shorts: Array[Char], ofs: Int, len: Int): F[NIOCharBufferIO[F]] =
         tw.wrap(new NIOCharBufferIO[F](CharBuffer.wrap(shorts, ofs, len), tw))
 
-      def wrapCharSequence(csq: CharSequence): F[CharBufferReadIO[F]] =
+      def wrapCharSequence(csq: CharSequence): F[NIOCharBufferReadIO[F]] =
         tw.wrap(new NIOCharBufferReadIO[F](CharBuffer.wrap(csq), tw))
-      def wrapCharSequenceSlice(csq: CharSequence, start: Int, end: Int): F[CharBufferReadIO[F]] =
+      def wrapCharSequenceSlice(csq: CharSequence, start: Int, end: Int): F[NIOCharBufferReadIO[F]] =
         tw.wrap(new NIOCharBufferReadIO[F](CharBuffer.wrap(csq, start, end), tw))
 
       type IORO = NIOCharBufferReadIO[F]
@@ -183,7 +183,7 @@ object NIOCharBufferReadIO {
     }
 }
 
-class NIOCharBufferReadIO[F[_]](val buf: CharBuffer, val tw: ThunkWrap[F])
+class NIOCharBufferReadIO[F[_]](private[nio] val buf: CharBuffer, val tw: ThunkWrap[F])
   extends NIOBufferReadIO[F, Char] with CharBufferReadIO[F] with BufferAndWrap[F] {
 
   def duplicateRO: F[CharBufferReadIO[F]] = tw.wrap(new NIOCharBufferReadIO(buf.duplicate, tw))
@@ -247,12 +247,12 @@ class NIOCharBufferIO[F[_]](buf: CharBuffer, tw: ThunkWrap[F])
 object NIOShortBufferReadIO {
   def apply[F[_]](implicit tw: ThunkWrap[F]): IsoShortBufferIO.Module[F] =
     new IsoShortBufferIO.Module[F] {
-      def allocate(capacity: Int): F[ShortBufferIO[F]] =
+      def allocate(capacity: Int): F[NIOShortBufferIO[F]] =
         tw.wrap(new NIOShortBufferIO[F](ShortBuffer.allocate(capacity), tw))
 
-      def wrapArray(shorts: Array[Short]): F[ShortBufferIO[F]] =
+      def wrapArray(shorts: Array[Short]): F[NIOShortBufferIO[F]] =
         tw.wrap(new NIOShortBufferIO[F](ShortBuffer.wrap(shorts), tw))
-      def wrapArraySlice(shorts: Array[Short], ofs: Int, len: Int): F[ShortBufferIO[F]] =
+      def wrapArraySlice(shorts: Array[Short], ofs: Int, len: Int): F[NIOShortBufferIO[F]] =
         tw.wrap(new NIOShortBufferIO[F](ShortBuffer.wrap(shorts, ofs, len), tw))
 
       type IORO = NIOShortBufferReadIO[F]
@@ -270,7 +270,7 @@ object NIOShortBufferReadIO {
     }
 }
 
-class NIOShortBufferReadIO[F[_]](val buf: ShortBuffer, val tw: ThunkWrap[F])
+class NIOShortBufferReadIO[F[_]](private[nio] val buf: ShortBuffer, val tw: ThunkWrap[F])
   extends NIOBufferReadIO[F, Short] with ShortBufferReadIO[F] with BufferAndWrap[F] {
 
   def duplicateRO: F[ShortBufferReadIO[F]] = tw.wrap(new NIOShortBufferReadIO(buf.duplicate, tw))
@@ -316,12 +316,12 @@ class NIOShortBufferIO[F[_]](buf: ShortBuffer, tw: ThunkWrap[F])
 object NIOIntBufferReadIO {
   def apply[F[_]](implicit tw: ThunkWrap[F]): IsoIntBufferIO.Module[F] =
     new IsoIntBufferIO.Module[F] {
-      def allocate(capacity: Int): F[IntBufferIO[F]] =
+      def allocate(capacity: Int): F[NIOIntBufferIO[F]] =
         tw.wrap(new NIOIntBufferIO[F](IntBuffer.allocate(capacity), tw))
 
-      def wrapArray(ints: Array[Int]): F[IntBufferIO[F]] =
+      def wrapArray(ints: Array[Int]): F[NIOIntBufferIO[F]] =
         tw.wrap(new NIOIntBufferIO[F](IntBuffer.wrap(ints), tw))
-      def wrapArraySlice(ints: Array[Int], ofs: Int, len: Int): F[IntBufferIO[F]] =
+      def wrapArraySlice(ints: Array[Int], ofs: Int, len: Int): F[NIOIntBufferIO[F]] =
         tw.wrap(new NIOIntBufferIO[F](IntBuffer.wrap(ints, ofs, len), tw))
 
       type IORO = NIOIntBufferReadIO[F]
@@ -339,7 +339,7 @@ object NIOIntBufferReadIO {
     }
 }
 
-class NIOIntBufferReadIO[F[_]](val buf: IntBuffer, val tw: ThunkWrap[F])
+class NIOIntBufferReadIO[F[_]](private[nio] val buf: IntBuffer, val tw: ThunkWrap[F])
       extends NIOBufferReadIO[F, Int] with IntBufferReadIO[F] with BufferAndWrap[F] {
 
   def duplicateRO: F[IntBufferReadIO[F]] = tw.wrap(new NIOIntBufferReadIO(buf.duplicate, tw))
@@ -385,12 +385,12 @@ class NIOIntBufferIO[F[_]](buf: IntBuffer, tw: ThunkWrap[F])
 object NIOLongBufferReadIO {
   def apply[F[_]](implicit tw: ThunkWrap[F]): IsoLongBufferIO.Module[F] =
     new IsoLongBufferIO.Module[F] {
-      def allocate(capacity: Int): F[LongBufferIO[F]] =
+      def allocate(capacity: Int): F[NIOLongBufferIO[F]] =
         tw.wrap(new NIOLongBufferIO[F](LongBuffer.allocate(capacity), tw))
 
-      def wrapArray(floats: Array[Long]): F[LongBufferIO[F]] =
+      def wrapArray(floats: Array[Long]): F[NIOLongBufferIO[F]] =
         tw.wrap(new NIOLongBufferIO[F](LongBuffer.wrap(floats), tw))
-      def wrapArraySlice(floats: Array[Long], ofs: Int, len: Int): F[LongBufferIO[F]] =
+      def wrapArraySlice(floats: Array[Long], ofs: Int, len: Int): F[NIOLongBufferIO[F]] =
         tw.wrap(new NIOLongBufferIO[F](LongBuffer.wrap(floats, ofs, len), tw))
 
       type IORO = NIOLongBufferReadIO[F]
@@ -408,7 +408,7 @@ object NIOLongBufferReadIO {
     }
 }
 
-class NIOLongBufferReadIO[F[_]](val buf: LongBuffer, val tw: ThunkWrap[F])
+class NIOLongBufferReadIO[F[_]](private[nio] val buf: LongBuffer, val tw: ThunkWrap[F])
   extends NIOBufferReadIO[F, Long] with LongBufferReadIO[F] with BufferAndWrap[F] {
 
   def duplicateRO: F[LongBufferReadIO[F]] = tw.wrap(new NIOLongBufferReadIO(buf.duplicate, tw))
@@ -454,12 +454,12 @@ class NIOLongBufferIO[F[_]](buf: LongBuffer, tw: ThunkWrap[F])
 object NIOFloatBufferReadIO {
   def apply[F[_]](implicit tw: ThunkWrap[F]): IsoFloatBufferIO.Module[F] =
     new IsoFloatBufferIO.Module[F] {
-      def allocate(capacity: Int): F[FloatBufferIO[F]] =
+      def allocate(capacity: Int): F[NIOFloatBufferIO[F]] =
         tw.wrap(new NIOFloatBufferIO[F](FloatBuffer.allocate(capacity), tw))
 
-      def wrapArray(floats: Array[Float]): F[FloatBufferIO[F]] =
+      def wrapArray(floats: Array[Float]): F[NIOFloatBufferIO[F]] =
         tw.wrap(new NIOFloatBufferIO[F](FloatBuffer.wrap(floats), tw))
-      def wrapArraySlice(floats: Array[Float], ofs: Int, len: Int): F[FloatBufferIO[F]] =
+      def wrapArraySlice(floats: Array[Float], ofs: Int, len: Int): F[NIOFloatBufferIO[F]] =
         tw.wrap(new NIOFloatBufferIO[F](FloatBuffer.wrap(floats, ofs, len), tw))
 
       type IORO = NIOFloatBufferReadIO[F]
@@ -477,7 +477,7 @@ object NIOFloatBufferReadIO {
     }
 }
 
-class NIOFloatBufferReadIO[F[_]](val buf: FloatBuffer, val tw: ThunkWrap[F])
+class NIOFloatBufferReadIO[F[_]](private[nio] val buf: FloatBuffer, val tw: ThunkWrap[F])
       extends NIOBufferReadIO[F, Float] with FloatBufferReadIO[F] with BufferAndWrap[F] {
 
   def duplicateRO: F[FloatBufferReadIO[F]] = tw.wrap(new NIOFloatBufferReadIO(buf.duplicate, tw))
@@ -523,12 +523,12 @@ class NIOFloatBufferIO[F[_]](buf: FloatBuffer, tw: ThunkWrap[F])
 object NIODoubleBufferReadIO {
   def apply[F[_]](implicit tw: ThunkWrap[F]): IsoDoubleBufferIO.Module[F] =
     new IsoDoubleBufferIO.Module[F] {
-      def allocate(capacity: Int): F[DoubleBufferIO[F]] =
+      def allocate(capacity: Int): F[NIODoubleBufferIO[F]] =
         tw.wrap(new NIODoubleBufferIO[F](DoubleBuffer.allocate(capacity), tw))
 
-      def wrapArray(doubles: Array[Double]): F[DoubleBufferIO[F]] =
+      def wrapArray(doubles: Array[Double]): F[NIODoubleBufferIO[F]] =
         tw.wrap(new NIODoubleBufferIO[F](DoubleBuffer.wrap(doubles), tw))
-      def wrapArraySlice(doubles: Array[Double], ofs: Int, len: Int): F[DoubleBufferIO[F]] =
+      def wrapArraySlice(doubles: Array[Double], ofs: Int, len: Int): F[NIODoubleBufferIO[F]] =
         tw.wrap(new NIODoubleBufferIO[F](DoubleBuffer.wrap(doubles, ofs, len), tw))
 
       type IORO = NIODoubleBufferReadIO[F]
@@ -546,7 +546,7 @@ object NIODoubleBufferReadIO {
     }
 }
 
-class NIODoubleBufferReadIO[F[_]](val buf: DoubleBuffer, val tw: ThunkWrap[F])
+class NIODoubleBufferReadIO[F[_]](private[nio] val buf: DoubleBuffer, val tw: ThunkWrap[F])
     extends NIOBufferReadIO[F, Double] with DoubleBufferReadIO[F] with BufferAndWrap[F] {
 
   def duplicateRO: F[DoubleBufferReadIO[F]] = tw.wrap(new NIODoubleBufferReadIO(buf.duplicate, tw))
