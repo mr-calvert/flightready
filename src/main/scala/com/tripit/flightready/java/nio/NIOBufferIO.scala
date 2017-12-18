@@ -39,33 +39,33 @@ trait NIOBufferIO[F[_], A] extends BufferIO[F, A] { self: BufferAndWrap[F] =>
 }
 
 
-object NIOByteBufferReadIO {
-  def apply[F[_]](implicit tw: ThunkWrap[F]): IsoByteBufferIO.Module[F] =
-    new IsoByteBufferIO.Module[F] {
-      def allocate(capacity: Int): F[NIOByteBufferIO[F]] =
-        tw.wrap(new NIOByteBufferIO[F](ByteBuffer.allocate(capacity), tw))
+class NIOByteBufferModule[F[_]](implicit tw: ThunkWrap[F]) extends IsoByteBufferIO.Module[F] {
+  def allocate(capacity: Int): F[NIOByteBufferIO[F]] =
+    tw.wrap(new NIOByteBufferIO[F](ByteBuffer.allocate(capacity), tw))
 
-      def allocateDirect(capacity: Int): F[NIOByteBufferIO[F]] =
-        tw.wrap(new NIOByteBufferIO[F](ByteBuffer.allocateDirect(capacity), tw))
+  def allocateDirect(capacity: Int): F[NIOByteBufferIO[F]] =
+    tw.wrap(new NIOByteBufferIO[F](ByteBuffer.allocateDirect(capacity), tw))
 
-      def wrapArray(shorts: Array[Byte]): F[NIOByteBufferIO[F]] =
-        tw.wrap(new NIOByteBufferIO[F](ByteBuffer.wrap(shorts), tw))
-      def wrapArraySlice(shorts: Array[Byte], ofs: Int, len: Int): F[NIOByteBufferIO[F]] =
-        tw.wrap(new NIOByteBufferIO[F](ByteBuffer.wrap(shorts, ofs, len), tw))
+  def wrapArray(shorts: Array[Byte]): F[NIOByteBufferIO[F]] =
+    tw.wrap(new NIOByteBufferIO[F](ByteBuffer.wrap(shorts), tw))
+  def wrapArraySlice(shorts: Array[Byte], ofs: Int, len: Int): F[NIOByteBufferIO[F]] =
+    tw.wrap(new NIOByteBufferIO[F](ByteBuffer.wrap(shorts, ofs, len), tw))
 
-      type IORO = NIOByteBufferReadIO[F]
-      type IORW = NIOByteBufferIO[F]
+  type IORO = NIOByteBufferReadIO[F]
+  type IORW = NIOByteBufferIO[F]
 
-      def isoMutableRORW: IsoMutableRORW[IORO, IORW, ByteBuffer] =
-        new IsoMutableRORW[IORO, IORW, ByteBuffer] {
-          def toMutable(io: NIOByteBufferReadIO[F]): ByteBuffer = io.buf
-          def toIORO(sb: ByteBuffer): NIOByteBufferReadIO[F] = new NIOByteBufferReadIO(sb, tw)
-          def toIORW(sb: ByteBuffer): Option[NIOByteBufferIO[F]] =
-            if (sb.isReadOnly) None
-            else Some(new NIOByteBufferIO(sb, tw))
-        }
-
+  def isoMutableRORW: IsoMutableRORW[IORO, IORW, ByteBuffer] =
+    new IsoMutableRORW[IORO, IORW, ByteBuffer] {
+      def toMutable(io: NIOByteBufferReadIO[F]): ByteBuffer = io.buf
+      def toIORO(sb: ByteBuffer): NIOByteBufferReadIO[F] = new NIOByteBufferReadIO(sb, tw)
+      def toIORW(sb: ByteBuffer): Option[NIOByteBufferIO[F]] =
+        if (sb.isReadOnly) None
+        else Some(new NIOByteBufferIO(sb, tw))
     }
+}
+
+object NIOByteBufferReadIO {
+  def apply[F[_]](implicit tw: ThunkWrap[F]): NIOByteBufferModule[F] = new NIOByteBufferModule[F]
 }
 
 class NIOByteBufferReadIO[F[_]](private[nio] val buf: ByteBuffer, val tw: ThunkWrap[F])
