@@ -3,7 +3,7 @@ package com.tripit.flightready.java.nio
 import scala.language.higherKinds
 import java.nio.ByteOrder
 
-import com.tripit.flightready.{IsoMutableRORW, IsoMutable}
+import com.tripit.flightready.IsoMutableRORW
 import com.tripit.flightready.integration.category.FlatMap
 
 trait BufferReadIO[F[_], A] {
@@ -11,7 +11,7 @@ trait BufferReadIO[F[_], A] {
   def capacity: Int // TODO: comment why not functor wrapped
 
   def isDirect: F[Boolean] // TODO: comment WHY functor wrapped
-  def order: F[ByteOrder] // TODO: consider our own ByteOrder
+  def order: F[ByteOrder]
 
   def limit: F[Int]
   def mark: F[Unit]
