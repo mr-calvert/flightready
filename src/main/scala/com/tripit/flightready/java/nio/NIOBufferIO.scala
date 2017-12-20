@@ -38,6 +38,9 @@ trait NIOBufferIO[F[_], A] extends BufferIO[F, A] { self: BufferAndWrap[F] =>
   def arrayOffset: Int = buf.arrayOffset
 }
 
+object NIOByteBufferModule {
+  def apply[F[_]](implicit tw: ThunkWrap[F]): NIOByteBufferModule[F] = new NIOByteBufferModule[F]
+}
 
 class NIOByteBufferModule[F[_]](implicit tw: ThunkWrap[F]) extends IsoByteBufferIO.Module[F] {
   def allocate(capacity: Int): F[NIOByteBufferIO[F]] =
