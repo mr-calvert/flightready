@@ -6,7 +6,7 @@ import java.nio.file.attribute.FileTime
 
 import com.tripit.flightready.integration.streaming.ResourceSafety
 import com.tripit.flightready.java.io.InputStreamIO
-import com.tripit.flightready.java.nio.{SeekableChannelReadIO, ByteBufferIO}
+import com.tripit.flightready.java.nio.{SeekableByteChannelReadIO, ByteBufferIO}
 
 object FSIO {
   trait Module[F[_]] extends FSPathTypes {
@@ -20,9 +20,9 @@ object FSIO {
 
 trait FSIO[F[_], Mod <: FSIO.Module[F]] extends FSReadIO[F, Mod] with FSWriteIO[F, Mod] {
   // TODO: deal with CopyOptions... yuck
-  def onByteChannelROF[X](p: Mod#P)(run: SeekableChannelReadIO[F, Mod#ByteBufferIOMod] => F[X]): F[X]
+  def onByteChannelROF[X](p: Mod#P)(run: SeekableByteChannelReadIO[F, Mod#ByteBufferIOMod] => F[X]): F[X]
   def onByteChannelROS[S[_[_], _], X](p: Mod#P)
-                                     (run: SeekableChannelReadIO[F, Mod#ByteBufferIOMod] => S[F, X])
+                                     (run: SeekableByteChannelReadIO[F, Mod#ByteBufferIOMod] => S[F, X])
                                      (implicit rs: ResourceSafety[S, F]): S[F, X]
 
   // TODO: add RW versions
