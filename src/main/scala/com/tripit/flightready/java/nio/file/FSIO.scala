@@ -1,16 +1,15 @@
 package com.tripit.flightready.java.nio.file
 
 import scala.language.higherKinds
-
 import java.nio.file.attribute.FileTime
 
 import com.tripit.flightready.integration.streaming.ResourceSafety
 import com.tripit.flightready.java.io.InputStreamIO
-import com.tripit.flightready.java.nio.{SeekableByteChannelReadIO, ByteBufferIO}
+import com.tripit.flightready.java.nio.{ByteBufferIO, SeekableByteChannelReadIO, SeekableByteChannelIO}
 
 object FSIO {
   trait Module[F[_]] extends FSPathTypes {
-    def fsDirIO: FSIO[F, this.type]
+    def fsIO: FSIO[F, _ <: FSIO.Module[F]]
 
     // TODO: well actually... move this to a new higher level module encompassing more than just file io
     type ByteBufferIOMod <: ByteBufferIO.Module[F]
@@ -19,14 +18,6 @@ object FSIO {
 }
 
 trait FSIO[F[_], Mod <: FSIO.Module[F]] extends FSReadIO[F, Mod] with FSWriteIO[F, Mod] {
-  // TODO: deal with CopyOptions... yuck
-  def onByteChannelROF[X](p: Mod#P)(run: SeekableByteChannelReadIO[F, Mod#ByteBufferIOMod] => F[X]): F[X]
-  def onByteChannelROS[S[_[_], _], X](p: Mod#P)
-                                     (run: SeekableByteChannelReadIO[F, Mod#ByteBufferIOMod] => S[F, X])
-                                     (implicit rs: ResourceSafety[S, F]): S[F, X]
-
-  // TODO: add RW versions
-
 }
 
 trait FSWriteIO[F[_], Mod <: FSIO.Module[F]] {
@@ -75,6 +66,12 @@ trait FSWriteIO[F[_], Mod <: FSIO.Module[F]] {
   // TODO: newBufferedWriter... be able to feed it either a naked Writer program or a PrintWriter program
 
   // TODO: newOutputStream... needs a nice little
+
+
+  def onByteChannelRWF[X](p: Mod#P)(run: SeekableByteChannelIO[F, Mod#ByteBufferIOMod] => F[X]): F[X]
+  def onByteChannelRWS[S[_[_], _], X](p: Mod#P)
+                                     (run: SeekableByteChannelIO[F, Mod#ByteBufferIOMod] => S[F, X])
+                                     (implicit rs: ResourceSafety[S, F]): S[F, X]
 }
 
 trait FSReadIO[F[_], Mod <: FSIO.Module[F]] {
@@ -152,6 +149,13 @@ trait FSReadIO[F[_], Mod <: FSIO.Module[F]] {
   // TODO: add OpenOptions parameter
   def onInputStreamF[X](p: Mod#P)(run: InputStreamIO[F] => F[X]): F[X]
   def onInputStreamS[S[_[_], _], X](p: Mod#P)(s: InputStreamIO[F] => S[F, X])(implicit rs: ResourceSafety[S, F]): S[F, X]
+
+  // TODO: deal with CopyOptions... yuck
+  def onByteChannelROF[X](p: Mod#P)(run: SeekableByteChannelReadIO[F, Mod#ByteBufferIOMod] => F[X]): F[X]
+  // TODO: get the signature right on this
+//  def onByteChannelROS[S[_[_], _], X](p: Mod#P)
+//                                     (run: SeekableByteChannelReadIO[F, Mod#ByteBufferIOMod] => S[F, X])
+//                                     (implicit rs: ResourceSafety[S, F]): S[F, X]
 
   // TODO: getFileStore... a naked FileStore is a bad thing so it too needs to be wrapped, question is do we make it opaque and provide an algebra or do we inject a FileStore algebra inside? Or both
 }
