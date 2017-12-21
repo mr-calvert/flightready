@@ -4,6 +4,7 @@ import scala.language.higherKinds
 import java.nio.file.attribute.FileTime
 
 import com.tripit.flightready.integration.category.FlatMap
+import com.tripit.flightready.integration.effect.Bracket
 import com.tripit.flightready.integration.streaming.ResourceSafety
 import com.tripit.flightready.java.io.InputStreamIO
 import com.tripit.flightready.java.nio.{ByteBufferIO, SeekableByteChannelReadIO, SeekableByteChannelIO}
@@ -105,11 +106,11 @@ trait FSReadIO[F[_], Mod <: FSIO.Module[F]] {
   // TODO: deal with CopyOptions... yuck
   def onByteChannelROF[X](p: Mod#P)
                          (run: SeekableByteChannelReadIO[F, Mod#ByteBufferIOMod] => F[X])
-                         (implicit fm: FlatMap[F]): F[X]
+                         (implicit fm: FlatMap[F], brkt: Bracket[F]): F[X]
   // TODO: get the signature right on this
-//  def onByteChannelROS[S[_[_], _], X](p: Mod#P)
-//                                     (run: SeekableByteChannelReadIO[F, Mod#ByteBufferIOMod] => S[F, X])
-//                                     (implicit rs: ResourceSafety[S, F]): S[F, X]
+  def onByteChannelROS[S[_[_], _], X](p: Mod#P)
+                                     (run: SeekableByteChannelReadIO[F, Mod#ByteBufferIOMod] => S[F, X])
+                                     (implicit rs: ResourceSafety[S, F]): S[F, X]
 
   // TODO: getFileStore... a naked FileStore is a bad thing so it too needs to be wrapped, question is do we make it opaque and provide an algebra or do we inject a FileStore algebra inside? Or both
 }

@@ -1,13 +1,14 @@
 package com.tripit.flightready.java.nio.file
 
+import scala.language.higherKinds
+
 import java.nio.file.Files
 import java.nio.file.attribute.FileTime
 
 import com.tripit.flightready.integration.category.FlatMap
-import com.tripit.flightready.integration.effect.ThunkWrap
+import com.tripit.flightready.integration.effect.{ThunkWrap, Bracket}
 import com.tripit.flightready.integration.streaming.ResourceSafety
 
-import scala.language.higherKinds
 import com.tripit.flightready.java.io.InputStreamIO
 import com.tripit.flightready.java.nio.{NIOByteBufferModule, NIOSeekableByteChannelIO, SeekableByteChannelReadIO}
 
@@ -46,20 +47,28 @@ class NIOFSReadIO[F[_]](tw: ThunkWrap[F]) extends FSReadIO[F, NIOFSIO.Module[F]]
   def probeContentType(p: P): F[String] = tw.wrap(Files.probeContentType(p))
 
   def readAllBytes(p: P): F[Array[Byte]] = tw.wrap(Files.readAllBytes(p))
-//  def readAllLines(p: P): F[Nothing] = ???
 
   def onInputStreamF[X](p: P)(run: InputStreamIO[F] => F[X]): F[X] = ???
   def onInputStreamS[S[_[_], _], X](p: P)
                                    (s: InputStreamIO[F] => S[F,X])
                                    (implicit rs: ResourceSafety[S,F]): S[F,X] = ???
 
-  def onByteChannelROF[X](p: P)
-                         (run: SeekableByteChannelReadIO[F, NIOByteBufferModule[F]] => F[X])
-                         (implicit fm: FlatMap[F]): F[X] =
-    fm.flatMap(
-      tw.wrap(new NIOSeekableByteChannelIO(Files.newByteChannel(p), tw))
-    )(run)
+  type SBCReadIO = SeekableByteChannelReadIO[F, NIOByteBufferModule[F]]
 
+  def onByteChannelROF[X](p: P)
+                         (run: SBCReadIO => F[X])
+                         (implicit fm: FlatMap[F], brkt: Bracket[F]): F[X] =
+    brkt.bracket(
+      tw.wrap(new NIOSeekableByteChannelIO(Files.newByteChannel(p), tw))
+    )(io => tw.wrap(io.sbc.close))(run)
+
+
+  def onByteChannelROS[S[_[_], _], X](p: P)
+                                     (run: SBCReadIO => S[F, X])
+                                     (implicit rs: ResourceSafety[S, F]): S[F, X] =
+    rs.bracketSource(
+      tw.wrap(new NIOSeekableByteChannelIO(Files.newByteChannel(p), tw))
+    )(sbc => tw.wrap(sbc.sbc.close))(run)
 }
 
 class NIOFSIO[F[_]] //extends FSIO[F, NIO]
