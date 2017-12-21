@@ -3,13 +3,13 @@ package com.tripit.flightready.java.nio.file
 import java.nio.file.Files
 import java.nio.file.attribute.FileTime
 
-import com.tripit.flightready.ThunkWrap
 import com.tripit.flightready.integration.category.FlatMap
+import com.tripit.flightready.integration.effect.ThunkWrap
 import com.tripit.flightready.integration.streaming.ResourceSafety
 
 import scala.language.higherKinds
 import com.tripit.flightready.java.io.InputStreamIO
-import com.tripit.flightready.java.nio.{NIOByteBufferModule, SeekableByteChannelReadIO, NIOSeekableByteChannelIO}
+import com.tripit.flightready.java.nio.{NIOByteBufferModule, NIOSeekableByteChannelIO, SeekableByteChannelReadIO}
 
 
 object NIOFSIO {

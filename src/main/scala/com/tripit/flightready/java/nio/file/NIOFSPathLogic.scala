@@ -6,8 +6,9 @@ import java.nio.file.{FileSystem, Path}
 
 import cats.Applicative
 import cats.effect.Sync
-import com.tripit.flightready.{ThunkWrap, IsoImmutableUnsafe}
+import com.tripit.flightready.IsoImmutableUnsafe
 import com.tripit.flightready.integration.category.Order
+import com.tripit.flightready.integration.effect.ThunkWrap
 
 
 object NIOFSPathLogic {

@@ -1,4 +1,4 @@
-package com.tripit.flightready
+package com.tripit.flightready.integration.effect
 
 import cats.Applicative
 

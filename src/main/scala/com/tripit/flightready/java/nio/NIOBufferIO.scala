@@ -1,11 +1,11 @@
 package com.tripit.flightready.java.nio
 
 import scala.language.higherKinds
-
 import java.nio._
 
-import com.tripit.flightready.{ThunkWrap, IsoMutableRORW}
+import com.tripit.flightready.IsoMutableRORW
 import com.tripit.flightready.integration.category.FlatMap
+import com.tripit.flightready.integration.effect.ThunkWrap
 import com.tripit.flightready.java.nio.file.PutBufferFallback
 
 

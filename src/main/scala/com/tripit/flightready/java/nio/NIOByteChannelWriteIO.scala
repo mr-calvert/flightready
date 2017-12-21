@@ -1,7 +1,9 @@
 package com.tripit.flightready.java.nio
 
-import com.tripit.flightready.{ThunkWrap, IsoMutable}
+import com.tripit.flightready.IsoMutable
 import java.nio.channels.{SeekableByteChannel, ReadableByteChannel, WritableByteChannel}
+
+import com.tripit.flightready.integration.effect.ThunkWrap
 
 import scala.language.higherKinds
 
