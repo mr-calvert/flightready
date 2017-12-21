@@ -1,6 +1,6 @@
 package com.tripit.flightready.java.nio
 
-import com.tripit.flightready.{ThunkWrap, IsoMutable, IsoMutableRORW}
+import com.tripit.flightready.{ThunkWrap, IsoMutable}
 import java.nio.channels.{SeekableByteChannel, ReadableByteChannel, WritableByteChannel}
 
 import scala.language.higherKinds
