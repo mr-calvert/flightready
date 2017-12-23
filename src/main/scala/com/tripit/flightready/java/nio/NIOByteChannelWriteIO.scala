@@ -60,6 +60,8 @@ object NIOSeekableByteChannelIO {
 class NIOSeekableByteChannelReadIO[F[_]](private[nio] val sbc: SeekableByteChannel, tw: ThunkWrap[F])
       extends NIOByteChannelReadIO[F](sbc, tw) with SeekableByteChannelReadIO[F, NIOByteBufferModule[F]] {
 
+  private[java] def close: F[Unit] = tw.wrap(sbc.close)
+
   def position: F[Long] = tw.wrap(sbc.position)
   def setPosition(pos: Long): F[Unit] = tw.wrap(sbc.position(pos))
   def size: F[Long] = tw.wrap(sbc.size)

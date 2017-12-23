@@ -27,11 +27,27 @@ object NIOFSPathLogic {
           def toImmutable(p: fsTypes.P): Path = p
         }
     }
+
+  // TODO: make a real exception
+  // TODO: test that the filesystem equality check is something like functional
+  /** Not exactly typesafe hack to retag raw [[Path]] instances.
+    *
+    * [[NIOFSIO]] has some operations that create new `Path`
+    * instances but doesn't have access to the tag method used here.
+    * Only operations expected to produce a Path in the same
+    * filesystem as its `in` parameter should use this hack. Out of
+    * pure healthy paranoia this hack then checks the `derived`
+    * `Path` really is in the expected filesystem. Thus preserving
+    * the Mod#P == filesystem equivalence class relationship.
+    */
+  private[java] def tagCheck[P <: Path](in: P, derived: Path): P =
+    if (in.getFileSystem == derived.getFileSystem) derived.asInstanceOf[P]
+    else throw new Exception("illegal filesystem change")
 }
 
 /** Interprets [[FSPathLogic]] by deference to
   * [[java.nio.file.FileSystem]] and friends. */
-// TODO: introduce a SuspendWrap typeclass
+// TODO: introduce a SuspendWrap typeclass, or maybe just require FlatMap
 class NIOFSPathLogic[F[_]: Sync, P <: Path](val fs: FileSystem)
       extends NIOFSPath[F, P](ThunkWrap.DelayInSync[F]) with FSPathLogic[F, P] {
 
@@ -65,7 +81,7 @@ class NIOFSPathLogic[F[_]: Sync, P <: Path](val fs: FileSystem)
   def endsWith(base: P, suffix: String): F[Boolean] =
     Sync[F].delay(base.endsWith(suffix))
 
-  def failNull[X](failure: => Exception, x: => X): F[X] =
+  private[this] def failNull[X](failure: => Exception, x: => X): F[X] =
     Sync[F].suspend {
       val mX = x
       if (mX == null) Sync[F].raiseError(failure)

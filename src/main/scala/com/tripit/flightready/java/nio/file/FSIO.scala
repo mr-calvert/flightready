@@ -26,19 +26,20 @@ trait FSIO[F[_], Mod <: FSIO.Module[F]] extends FSReadIO[F, Mod] with FSWriteIO[
 
 
 trait FSReadIO[F[_], Mod <: FSIO.Module[F]] {
-  // TODO: add java.nio.file.Path methods that do IO to operate on Paths
+  def realPath(p: Mod#P, followLinks: Boolean): F[Mod#P]
+  // TODO: add remaining java.nio.file.Path methods that do IO to operate on Paths
 
   // TODO: doc comment including link back to Files method doc
   def isSameFile(pl: Mod#P, pr: Mod#P): F[Boolean]
 
   // TODO: doc comment including link back to Files method doc
-  def exists(p: Mod#P): F[Boolean] // TODO: add link options parameter
+  def exists(p: Mod#P, followLinks: Boolean): F[Boolean]
 
   // TODO: doc comment including link back to Files method doc
-  def notExists(p: Mod#P): F[Boolean] // TODO: add LinkOPtions parameter
+  def notExists(p: Mod#P, followLinks: Boolean): F[Boolean]
 
   // TODO: doc comment including link back to Files method doc
-  def isDirectory(p: Mod#P): F[Boolean] // TODO: add LinkOption parameter
+  def isDirectory(p: Mod#P, followLinks: Boolean): F[Boolean]
 
   // TODO: doc comment including link back to Files method doc
   def isExecutable(p: Mod#P): F[Boolean]
@@ -50,7 +51,7 @@ trait FSReadIO[F[_], Mod <: FSIO.Module[F]] {
   def isReadable(p: Mod#P): F[Boolean]
 
   // TODO: doc comment including link back to Files method doc
-  def isRegularFile(p: Mod#P): F[Boolean] // TODO: add LinkOption parameter
+  def isRegularFile(p: Mod#P, followLinks: Boolean): F[Boolean]
 
   // TODO: doc comment including link back to Files method doc
   def isSymbolicLink(p: Mod#P): F[Boolean]
@@ -63,12 +64,11 @@ trait FSReadIO[F[_], Mod <: FSIO.Module[F]] {
 
   // TODO: doc comment including link back to Files method doc
   // TODO: wrap FileTime so as to hide all Java types from interfaces... we'd like to play nice with non java environments
-  // TODO: add LinkOptions parameter
-  def lastModifiedTime(p: Mod#P): F[FileTime]
+  def lastModifiedTime(p: Mod#P, followLinks: Boolean): F[FileTime]
 
   // TODO: doc comment including link back to Files method doc
-  // TODO: document why it returns String
-  def readSymbolicLink(p: Mod#P): F[String]
+  // TODO: document the assumption that links never change filsystems
+  def readSymbolicLink(p: Mod#P): F[Mod#P]
 
   // TODO: getOwner... got to figure out to wrap the whole `Principle` thing
 
@@ -100,8 +100,10 @@ trait FSReadIO[F[_], Mod <: FSIO.Module[F]] {
 
   // TODO: doc comment including link back to Files method doc and discussion about FP semantics retrofit
   // TODO: add OpenOptions parameter
-  def onInputStreamF[X](p: Mod#P)(run: InputStreamIO[F] => F[X]): F[X]
-  def onInputStreamS[S[_[_], _], X](p: Mod#P)(s: InputStreamIO[F] => S[F, X])(implicit rs: ResourceSafety[S, F]): S[F, X]
+  def onInputStreamF[X](p: Mod#P)(run: InputStreamIO[F] => F[X])(implicit brkt: Bracket[F]): F[X]
+  def onInputStreamS[S[_[_], _], X](p: Mod#P)
+                                   (s: InputStreamIO[F] => S[F, X])
+                                   (implicit rs: ResourceSafety[S, F]): S[F, X]
 
   // TODO: deal with CopyOptions... yuck
   def onByteChannelROF[X](p: Mod#P)
@@ -120,6 +122,7 @@ trait FSWriteIO[F[_], Mod <: FSIO.Module[F]] {
   def copy(src: Mod#P, dst: Mod#P, options: CopyOption*): F[Mod#P]
 
   // TODO: doc comment including link back to Files method doc
+  // TODO: document somewhere about my ambivalence about var args: 1) eta to Seq version works, 2) use of Seq is iffy, 3) seems to actually work
   def move(src: Mod#P, dst: Mod#P, options: MoveOption*): F[Mod#P]
 
   // TODO: doc comment including link back to Files method doc
@@ -164,9 +167,10 @@ trait FSWriteIO[F[_], Mod <: FSIO.Module[F]] {
 
 
   def onByteChannelRWF[X](p: Mod#P)(run: SeekableByteChannelIO[F, Mod#ByteBufferIOMod] => F[X]): F[X]
-  def onByteChannelRWS[S[_[_], _], X](p: Mod#P)
-                                     (run: SeekableByteChannelIO[F, Mod#ByteBufferIOMod] => S[F, X])
-                                     (implicit rs: ResourceSafety[S, F]): S[F, X]
+  // TODO: sort out if there's any reason for a source version, or just make sink version
+//  def onByteChannelRWS[S[_[_], _], X](p: Mod#P)
+//                                     (run: SeekableByteChannelIO[F, Mod#ByteBufferIOMod] => S[F, X])
+//                                     (implicit rs: ResourceSafety[S, F]): S[F, X]
 }
 
 
