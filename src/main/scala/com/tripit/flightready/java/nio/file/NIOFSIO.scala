@@ -1,7 +1,7 @@
 package com.tripit.flightready.java.nio.file
 
 import scala.language.higherKinds
-import java.nio.file.{Files, LinkOption}
+import java.nio.file.{LinkOption, Files, Path}
 import java.nio.file.attribute.FileTime
 
 import com.tripit.flightready.integration.category.FlatMap
@@ -9,6 +9,7 @@ import com.tripit.flightready.integration.effect.{ThunkWrap, Bracket}
 import com.tripit.flightready.integration.streaming.ResourceSafety
 import com.tripit.flightready.java.io.{InputStreamIO, IOInputStreamIO}
 import com.tripit.flightready.java.nio.{NIOByteBufferModule, NIOSeekableByteChannelIO, SeekableByteChannelReadIO}
+import com.tripit.flightready.util.TaggedNewtype.@@
 
 
 object NIOFSIO {
@@ -31,6 +32,11 @@ class NIOFSReadIO[F[_]](tw: ThunkWrap[F]) extends FSReadIO[F, NIOFSIO.Module[F]]
         p,
         p.toRealPath(linkOptions(followLinks): _*)
       )
+    )
+
+  def absolutePath(p: P): F[P] =
+    tw.wrap(
+      NIOFSPathLogic.tagCheck(p, p.toAbsolutePath)
     )
 
   def isSameFile(pl: P, pr: P): F[Boolean] = tw.wrap(Files.isSameFile(pl, pr))

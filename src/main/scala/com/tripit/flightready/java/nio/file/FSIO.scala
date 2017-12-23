@@ -24,49 +24,39 @@ object FSIO {
 
 trait FSIO[F[_], Mod <: FSIO.Module[F]] extends FSReadIO[F, Mod] with FSWriteIO[F, Mod]
 
-
+// TOOD; doc comments including links back to original method documentation
 trait FSReadIO[F[_], Mod <: FSIO.Module[F]] {
-  def realPath(p: Mod#P, followLinks: Boolean): F[Mod#P]
-  // TODO: add remaining java.nio.file.Path methods that do IO to operate on Paths
+  // TODO: figure out watch services, how to wrap
 
-  // TODO: doc comment including link back to Files method doc
+  def realPath(p: Mod#P, followLinks: Boolean): F[Mod#P]
+
+  def absolutePath(p: Mod#P): F[Mod#P]
+
   def isSameFile(pl: Mod#P, pr: Mod#P): F[Boolean]
 
-  // TODO: doc comment including link back to Files method doc
   def exists(p: Mod#P, followLinks: Boolean): F[Boolean]
 
-  // TODO: doc comment including link back to Files method doc
   def notExists(p: Mod#P, followLinks: Boolean): F[Boolean]
 
-  // TODO: doc comment including link back to Files method doc
   def isDirectory(p: Mod#P, followLinks: Boolean): F[Boolean]
 
-  // TODO: doc comment including link back to Files method doc
   def isExecutable(p: Mod#P): F[Boolean]
 
-  // TODO: doc comment including link back to Files method doc
   def isHidden(p: Mod#P): F[Boolean]
 
-  // TODO: doc comment including link back to Files method doc
   def isReadable(p: Mod#P): F[Boolean]
 
-  // TODO: doc comment including link back to Files method doc
   def isRegularFile(p: Mod#P, followLinks: Boolean): F[Boolean]
 
-  // TODO: doc comment including link back to Files method doc
   def isSymbolicLink(p: Mod#P): F[Boolean]
 
-  // TODO: doc comment including link back to Files method doc
   def isWritable(p: Mod#P): F[Boolean]
 
-  // TODO: doc comment including link back to Files method doc
   def size(p: Mod#P): F[Long]
 
-  // TODO: doc comment including link back to Files method doc
   // TODO: wrap FileTime so as to hide all Java types from interfaces... we'd like to play nice with non java environments
   def lastModifiedTime(p: Mod#P, followLinks: Boolean): F[FileTime]
 
-  // TODO: doc comment including link back to Files method doc
   // TODO: document the assumption that links never change filsystems
   def readSymbolicLink(p: Mod#P): F[Mod#P]
 
@@ -84,21 +74,17 @@ trait FSReadIO[F[_], Mod <: FSIO.Module[F]] {
 
   // TODO: walkFileTree... the $64,000,000 question is if it's possible to do an FP wrapping of a visitor... yes if your require an "Unsafe" typeclass for the effect type and return Unit... harder if you want to model building a return value because that value then HAS to be mutable
 
-  // TODO: doc comment including link back to Files method doc
   def probeContentType(p: Mod#P): F[String] // TODO: can we return something smarter than a String?
 
-  // TODO: doc comment including link back to Files method doc
   // TODO: Something less mutable than an Array??
   def readAllBytes(p: Mod#P): F[Array[Byte]]
 
-  // TODO: doc comment including link back to Files method doc
   // TODO: encode CharSet without being horrible
   // TODO: figure out the least horrible way to pass on a java list of strings and replace that Nothing
 //  def readAllLines(p: Mod#P): F[Nothing]
 
   // TODO: newBufferedReader... algebra open buffered reader algebra executor and stream interface, needs a smart way of expressing CharSet, should also support byte streaming
 
-  // TODO: doc comment including link back to Files method doc and discussion about FP semantics retrofit
   // TODO: add OpenOptions parameter
   def onInputStreamF[X](p: Mod#P)(run: InputStreamIO[F] => F[X])(implicit brkt: Bracket[F]): F[X]
   def onInputStreamS[S[_[_], _], X](p: Mod#P)
@@ -109,7 +95,7 @@ trait FSReadIO[F[_], Mod <: FSIO.Module[F]] {
   def onByteChannelROF[X](p: Mod#P)
                          (run: SeekableByteChannelReadIO[F, Mod#ByteBufferIOMod] => F[X])
                          (implicit fm: FlatMap[F], brkt: Bracket[F]): F[X]
-  // TODO: get the signature right on this
+
   def onByteChannelROS[S[_[_], _], X](p: Mod#P)
                                      (run: SeekableByteChannelReadIO[F, Mod#ByteBufferIOMod] => S[F, X])
                                      (implicit rs: ResourceSafety[S, F]): S[F, X]
@@ -118,35 +104,26 @@ trait FSReadIO[F[_], Mod <: FSIO.Module[F]] {
 }
 
 trait FSWriteIO[F[_], Mod <: FSIO.Module[F]] {
-  // TODO: doc comment including link back to Files method doc
   def copy(src: Mod#P, dst: Mod#P, options: CopyOption*): F[Mod#P]
 
-  // TODO: doc comment including link back to Files method doc
   // TODO: document somewhere about my ambivalence about var args: 1) eta to Seq version works, 2) use of Seq is iffy, 3) seems to actually work
   def move(src: Mod#P, dst: Mod#P, options: MoveOption*): F[Mod#P]
 
-  // TODO: doc comment including link back to Files method doc
   def createDirectories(p: Mod#P): F[Mod#P] // TODO: add FileAttribute parameter
 
-  // TODO: doc comment including link back to Files method doc
   def createDirectory(p: Mod#P): F[Mod#P] // TODO: add FileAttribute parameter
 
-  // TODO: doc comment including link back to Files method doc
   def createFile(f: Mod#P): F[Mod#P] // TODO: add FileAttribute parameter
 
-  // TODO: doc comment including link back to Files method doc
   def createLink(link: Mod#P, existing: Mod#P): F[Mod#P]
 
-  // TODO: doc comment including link back to Files method doc
   def createSymbolicLink(link: Mod#P, target: Mod#P): F[Mod#P] // TODO: add FileAttributes parameter
 
   // TODO: createTempDirectory methods
   // TODO: createTempFile methods
 
-  // TODO: doc comment including link back to Files method doc
   def delete(p: Mod#P): F[Unit]
 
-  // TODO: doc comment including link back to Files method doc
   def deleteIfExists(p: Mod#P): F[Boolean]
 
   // TODO: setAttribute... straightforward, but man the native types here scream for help
