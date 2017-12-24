@@ -1,7 +1,7 @@
 package com.tripit.flightready.java.nio.file
 
 import scala.language.higherKinds
-import java.nio.file.{LinkOption, Files}
+import java.nio.file.{LinkOption, Files, StandardOpenOption}
 import java.nio.file.attribute.FileTime
 
 import com.tripit.flightready.integration.effect.{ThunkWrap, Bracket}
@@ -39,18 +39,26 @@ class NIOFSIO[F[_]](val tw: ThunkWrap[F])
 
   type SBCIO = SeekableByteChannelIO[F, NIOByteBufferModule[F]]
 
-  def onByteChannelRWF[X](p: P)(run: SBCIO => F[X])(implicit brkt: Bracket[F]): F[X] =
-    brkt.bracket(newByteChannelRW(p))(_.close)(run)
+  def onByteChannelRWF[X](p: P, openOptions: OpenRWOption*)(run: SBCIO => F[X])(implicit brkt: Bracket[F]): F[X] =
+    brkt.bracket(newByteChannelRW(p, openOptions))(_.close)(run)
 
   def onByteChannelRWS[S[_[_], _], I, O]
-                      (p: P)
+                      (p: P, openOptions: OpenRWOption*)
                       (run: SeekableByteChannelIO[F, NIOByteBufferModule[F]] => S[F, I] => S[F, O])
                       (implicit rs: ResourceSafety[S, F]): S[F, O] =
 
-    rs.bracketSink(newByteChannelRW(p))(_.close)(run)
+    rs.bracketSink(newByteChannelRW(p, openOptions))(_.close)(run)
 
-  private[this] def newByteChannelRW(p: P) =
-    tw.wrap(new NIOSeekableByteChannelIO(Files.newByteChannel(p), tw)) // TODO: open for write
+  private[this] def newByteChannelRW(p: P, oos: Seq[OpenRWOption]) =
+    tw.wrap(
+      new NIOSeekableByteChannelIO(
+        Files.newByteChannel(
+          p,
+          StandardOpenOption.READ +: StandardOpenOption.WRITE +: oos.map { _.jOO }: _*
+        ),
+        tw
+      )
+    )
 }
 
 class NIOFSReadIO[F[_]](tw: ThunkWrap[F]) extends FSReadIO[F, NIOFSIO.Module[F]] {
@@ -118,18 +126,26 @@ class NIOFSReadIO[F[_]](tw: ThunkWrap[F]) extends FSReadIO[F, NIOFSIO.Module[F]]
 
   type SBCReadIO = SeekableByteChannelReadIO[F, NIOByteBufferModule[F]]
 
-  def onByteChannelROF[X](p: P)
+  def onByteChannelROF[X](p: P, openOptions: OpenReadOption*)
                          (run: SBCReadIO => F[X])
                          (implicit brkt: Bracket[F]): F[X] =
-    brkt.bracket(newByteChannelRO(p))(_.close)(run)
+    brkt.bracket(newByteChannelRO(p, openOptions))(_.close)(run)
 
-  def onByteChannelROS[S[_[_], _], X](p: P)
+  def onByteChannelROS[S[_[_], _], X](p: P, openOptions: OpenReadOption*)
                                      (run: SBCReadIO => S[F, X])
                                      (implicit rs: ResourceSafety[S, F]): S[F, X] =
-    rs.bracketSource(newByteChannelRO(p))(_.close)(run)
+    rs.bracketSource(newByteChannelRO(p, openOptions))(_.close)(run)
 
-  private[this] def newByteChannelRO(p: P) =
-    tw.wrap(new NIOSeekableByteChannelReadIO(Files.newByteChannel(p), tw)) // TODO: open for read
+  private[this] def newByteChannelRO(p: P, oos: Seq[OpenReadOption]) =
+    tw.wrap(
+      new NIOSeekableByteChannelReadIO(
+        Files.newByteChannel(
+          p,
+          StandardOpenOption.READ +: oos.map { _.jOO }: _*
+        ),
+        tw
+      )
+    )
 
 
   private[this] def linkOptions(followLinks: Boolean): List[LinkOption] =
@@ -137,7 +153,6 @@ class NIOFSReadIO[F[_]](tw: ThunkWrap[F]) extends FSReadIO[F, NIOFSIO.Module[F]]
     else List(LinkOption.NOFOLLOW_LINKS)
 }
 
-//class NIOFSIO[F[_]](tw: ThunkWrap[F]) extends NIOFSReadIO[F](tw) with FSIO[F, NIOFSIO.Module[F]] {
 trait NIOFSWriteIOImpl[F[_]] extends FSWriteIO[F, NIOFSIO.Module[F]] {
   type P = NIOFSIO.Module[F]#P
 
@@ -175,6 +190,13 @@ trait NIOFSWriteIOImpl[F[_]] extends FSWriteIO[F, NIOFSIO.Module[F]] {
       NIOFSPathLogic.tagCheck(f, Files.createFile(f))
     )
 
+  def onByteChannelAppendF[X](p: P, openOptions: OpenRWOption*)
+                             (run: SeekableByteChannelIO[F, NIOByteBufferModule[F]] => F[X])
+                             (implicit brkt: Bracket[F]): F[X] = ???
+  def onByteChannelAppendS[S[_[_], _], I, O]
+                          (p: P, openOptions: OpenRWOption*)
+                          (run: SeekableByteChannelIO[F, NIOByteBufferModule[F]] => S[F, I] => S[F, O])
+                          (implicit rs: ResourceSafety[S, F]): S[F, O] = ???
 
 }
 
