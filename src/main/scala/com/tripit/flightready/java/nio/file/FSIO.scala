@@ -22,6 +22,20 @@ object FSIO {
   }
 }
 
+trait FSIO[F[_], Mod <: FSIO.Module[F]] extends FSReadIO[F, Mod] with FSWriteIO[F, Mod] {
+  // TODO: document somewhere about my ambivalence about var args: 1) eta to Seq version works, 2) use of Seq is iffy, 3) seems to actually work
+  def copy(src: Mod#P, dst: Mod#P, options: CopyOption*): F[Mod#P]
+  def move(src: Mod#P, dst: Mod#P, options: MoveOption*): F[Mod#P]
+
+  def onByteChannelRWF[X](p: Mod#P)
+                         (run: SeekableByteChannelIO[F, Mod#ByteBufferIOMod] => F[X])
+                         (implicit brkt: Bracket[F]): F[X]
+  def onByteChannelRWS[S[_[_], _], I, O]
+                      (p: Mod#P)
+                      (run: SeekableByteChannelIO[F, Mod#ByteBufferIOMod] => S[F, I] => S[F, O])
+                      (implicit rs: ResourceSafety[S, F]): S[F, O]
+}
+
 // TOOD; doc comments including links back to original method documentation
 trait FSReadIO[F[_], Mod <: FSIO.Module[F]] {
   // TODO: figure out watch services, how to wrap
@@ -101,27 +115,17 @@ trait FSReadIO[F[_], Mod <: FSIO.Module[F]] {
   // TODO: getFileStore... a naked FileStore is a bad thing so it too needs to be wrapped, question is do we make it opaque and provide an algebra or do we inject a FileStore algebra inside? Or both
 }
 
-trait FSIO[F[_], Mod <: FSIO.Module[F]] extends FSReadIO[F, Mod]  {
-  // TODO: document somewhere about my ambivalence about var args: 1) eta to Seq version works, 2) use of Seq is iffy, 3) seems to actually work
-  def copy(src: Mod#P, dst: Mod#P, options: CopyOption*): F[Mod#P]
-
-  def move(src: Mod#P, dst: Mod#P, options: MoveOption*): F[Mod#P]
-
+trait FSWriteIO[F[_], Mod <: FSIO.Module[F]] {
   def createDirectories(p: Mod#P): F[Mod#P] // TODO: add FileAttribute parameter
-
   def createDirectory(p: Mod#P): F[Mod#P] // TODO: add FileAttribute parameter
-
   def createFile(f: Mod#P): F[Mod#P] // TODO: add FileAttribute parameter
-
   def createLink(link: Mod#P, existing: Mod#P): F[Mod#P]
-
   def createSymbolicLink(link: Mod#P, target: Mod#P): F[Mod#P] // TODO: add FileAttributes parameter
 
   // TODO: createTempDirectory methods
   // TODO: createTempFile methods
 
   def delete(p: Mod#P): F[Unit]
-
   def deleteIfExists(p: Mod#P): F[Boolean]
 
   // TODO: setAttribute... straightforward, but man the native types here scream for help
@@ -140,15 +144,7 @@ trait FSIO[F[_], Mod <: FSIO.Module[F]] extends FSReadIO[F, Mod]  {
 
   // TODO: newOutputStream... needs a nice little
 
-
-  def onByteChannelRWF[X](p: Mod#P)
-                         (run: SeekableByteChannelIO[F, Mod#ByteBufferIOMod] => F[X])
-                         (implicit brkt: Bracket[F]): F[X]
-  // TODO: sort out if there's any reason for a source version, or just make sink version
-  def onByteChannelRWS[S[_[_], _], I, O]
-                      (p: Mod#P)
-                      (run: SeekableByteChannelIO[F, Mod#ByteBufferIOMod] => S[F, I] => S[F, O])
-                      (implicit rs: ResourceSafety[S, F]): S[F, O]
+  // TODO: byte stream append methods
 }
 
 

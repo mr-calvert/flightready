@@ -1,15 +1,13 @@
 package com.tripit.flightready.java.nio.file
 
 import scala.language.higherKinds
-import java.nio.file.{LinkOption, Files, Path}
+import java.nio.file.{LinkOption, Files}
 import java.nio.file.attribute.FileTime
 
-import com.tripit.flightready.integration.category.FlatMap
 import com.tripit.flightready.integration.effect.{ThunkWrap, Bracket}
 import com.tripit.flightready.integration.streaming.ResourceSafety
 import com.tripit.flightready.java.io.{InputStreamIO, IOInputStreamIO}
 import com.tripit.flightready.java.nio._
-import com.tripit.flightready.util.TaggedNewtype.@@
 
 
 object NIOFSIO {
@@ -21,6 +19,38 @@ object NIOFSIO {
     type ByteBufferIOMod = NIOByteBufferModule[F]
     def byteBufferModule: ByteBufferIOMod = ???
   }
+}
+
+class NIOFSIO[F[_]](val tw: ThunkWrap[F])
+      extends NIOFSReadIO[F](tw) with FSIO[F, NIOFSIO.Module[F]] with NIOFSWriteIOImpl[F] {
+
+  override type P = NIOFSIO.Module[F]#P
+
+  def copy(src: P, dst: P, options: CopyOption*): F[P] =
+    tw.wrap(
+      NIOFSPathLogic.tagCheck(dst, Files.copy(src, dst))
+    )
+
+  def move(src: P, dst: P, options: MoveOption*): F[P] =
+    tw.wrap(
+      NIOFSPathLogic.tagCheck(dst, Files.move(src, dst))
+    )
+
+
+  type SBCIO = SeekableByteChannelIO[F, NIOByteBufferModule[F]]
+
+  def onByteChannelRWF[X](p: P)(run: SBCIO => F[X])(implicit brkt: Bracket[F]): F[X] =
+    brkt.bracket(newByteChannelRW(p))(_.close)(run)
+
+  def onByteChannelRWS[S[_[_], _], I, O]
+                      (p: P)
+                      (run: SeekableByteChannelIO[F, NIOByteBufferModule[F]] => S[F, I] => S[F, O])
+                      (implicit rs: ResourceSafety[S, F]): S[F, O] =
+
+    rs.bracketSink(newByteChannelRW(p))(_.close)(run)
+
+  private[this] def newByteChannelRW(p: P) =
+    tw.wrap(new NIOSeekableByteChannelIO(Files.newByteChannel(p), tw)) // TODO: open for write
 }
 
 class NIOFSReadIO[F[_]](tw: ThunkWrap[F]) extends FSReadIO[F, NIOFSIO.Module[F]] {
@@ -107,16 +137,11 @@ class NIOFSReadIO[F[_]](tw: ThunkWrap[F]) extends FSReadIO[F, NIOFSIO.Module[F]]
     else List(LinkOption.NOFOLLOW_LINKS)
 }
 
-class NIOFSIO[F[_]](tw: ThunkWrap[F]) extends NIOFSReadIO[F](tw) with FSIO[F, NIOFSIO.Module[F]] {
-  def copy(src: P, dst: P, options: CopyOption*): F[P] =
-    tw.wrap(
-      NIOFSPathLogic.tagCheck(dst, Files.copy(src, dst))
-    )
+//class NIOFSIO[F[_]](tw: ThunkWrap[F]) extends NIOFSReadIO[F](tw) with FSIO[F, NIOFSIO.Module[F]] {
+trait NIOFSWriteIOImpl[F[_]] extends FSWriteIO[F, NIOFSIO.Module[F]] {
+  type P = NIOFSIO.Module[F]#P
 
-  def move(src: P, dst: P, options: MoveOption*): F[P] =
-    tw.wrap(
-      NIOFSPathLogic.tagCheck(dst, Files.move(src, dst))
-    )
+  def tw: ThunkWrap[F]
 
   def createDirectories(p: P): F[P] =
     tw.wrap(
@@ -151,19 +176,6 @@ class NIOFSIO[F[_]](tw: ThunkWrap[F]) extends NIOFSReadIO[F](tw) with FSIO[F, NI
     )
 
 
-  type SBCIO = SeekableByteChannelIO[F, NIOByteBufferModule[F]]
-
-  def onByteChannelRWF[X](p: P)(run: SBCIO => F[X])(implicit brkt: Bracket[F]): F[X] =
-    brkt.bracket(newByteChannelRW(p))(_.close)(run)
-
-  def onByteChannelRWS[S[_[_], _], I, O]
-                      (p: P)
-                      (run: SeekableByteChannelIO[F, NIOByteBufferModule[F]] => S[F, I] => S[F, O])
-                      (implicit rs: ResourceSafety[S, F]): S[F, O] =
-
-    rs.bracketSink(newByteChannelRW(p))(_.close)(run)
-
-  private[this] def newByteChannelRW(p: P) =
-    tw.wrap(new NIOSeekableByteChannelIO(Files.newByteChannel(p), tw)) // TODO: open for write
-
 }
+
+class NIOFSWriteIO[F[_]](val tw: ThunkWrap[F]) extends NIOFSWriteIOImpl[F]
