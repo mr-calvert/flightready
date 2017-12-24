@@ -36,6 +36,8 @@ object NIOByteChannelWriteIO {
 class NIOByteChannelWriteIO[F[_]](private[nio] val wbc: WritableByteChannel, tw: ThunkWrap[F])
       extends ByteChannelWriteIO[F, NIOByteBufferModule[F]] {
 
+  private[java] def close: F[Unit] = tw.wrap(wbc.close)
+
   def write(bbioIn: NIOByteBufferModule[F]#IORO): F[Int] =
     tw.wrap(wbc.write(NIOByteBufferModule[F](tw).isoMutableRORW.toMutable(bbioIn)))
 }

@@ -9,7 +9,7 @@ import com.tripit.flightready.integration.category.FlatMap
 import com.tripit.flightready.integration.effect.Bracket
 import com.tripit.flightready.integration.streaming.ResourceSafety
 import com.tripit.flightready.java.io.InputStreamIO
-import com.tripit.flightready.java.nio.{ByteBufferIO, SeekableByteChannelReadIO, SeekableByteChannelIO}
+import com.tripit.flightready.java.nio.{ByteBufferIO, SeekableByteChannelReadIO, SeekableByteChannelIO, ByteChannelWriteIO}
 
 object FSIO {
   trait Module[F[_]] {
@@ -145,13 +145,13 @@ trait FSWriteIO[F[_], Mod <: FSIO.Module[F]] {
 
   // TODO: newOutputStream... needs a nice little
 
-  // TODO: make this take a write only view of SeekableByteChannelIO, maybe modified to be append only
-  def onByteChannelAppendF[X](p: Mod#P, openOptions: OpenRWOption*)
-                             (run: SeekableByteChannelIO[F, Mod#ByteBufferIOMod] => F[X])
+  // TODO: taunt anybody who wants to use size or truncate in append mode and tell them to PR it
+  def onByteChannelAppendF[X](p: Mod#P, openOptions: OpenAppendOption*)
+                             (run: ByteChannelWriteIO[F, Mod#ByteBufferIOMod] => F[X])
                              (implicit brkt: Bracket[F]): F[X]
   def onByteChannelAppendS[S[_[_], _], I, O]
-                          (p: Mod#P, openOptions: OpenRWOption*)
-                          (run: SeekableByteChannelIO[F, Mod#ByteBufferIOMod] => S[F, I] => S[F, O])
+                          (p: Mod#P, openOptions: OpenAppendOption*)
+                          (run: ByteChannelWriteIO[F, Mod#ByteBufferIOMod] => S[F, I] => S[F, O])
                           (implicit rs: ResourceSafety[S, F]): S[F, O]
 }
 

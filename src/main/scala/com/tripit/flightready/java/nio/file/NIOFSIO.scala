@@ -190,13 +190,28 @@ trait NIOFSWriteIOImpl[F[_]] extends FSWriteIO[F, NIOFSIO.Module[F]] {
       NIOFSPathLogic.tagCheck(f, Files.createFile(f))
     )
 
-  def onByteChannelAppendF[X](p: P, openOptions: OpenRWOption*)
-                             (run: SeekableByteChannelIO[F, NIOByteBufferModule[F]] => F[X])
-                             (implicit brkt: Bracket[F]): F[X] = ???
+
+  def onByteChannelAppendF[X](p: P, openOptions: OpenAppendOption*)
+                             (run: ByteChannelWriteIO[F, NIOByteBufferModule[F]] => F[X])
+                             (implicit brkt: Bracket[F]): F[X] =
+    brkt.bracket(newByteChannelAppend(p, openOptions))(_.close)(run)
+
   def onByteChannelAppendS[S[_[_], _], I, O]
-                          (p: P, openOptions: OpenRWOption*)
-                          (run: SeekableByteChannelIO[F, NIOByteBufferModule[F]] => S[F, I] => S[F, O])
-                          (implicit rs: ResourceSafety[S, F]): S[F, O] = ???
+                          (p: P, openOptions: OpenAppendOption*)
+                          (run: ByteChannelWriteIO[F, NIOByteBufferModule[F]] => S[F, I] => S[F, O])
+                          (implicit rs: ResourceSafety[S, F]): S[F, O] =
+    rs.bracketSink(newByteChannelAppend(p, openOptions))(_.close)(run)
+
+  private[this] def newByteChannelAppend(p: P, oos: Seq[OpenAppendOption]) =
+    tw.wrap(
+      new NIOByteChannelWriteIO(
+        Files.newByteChannel(
+          p,
+          StandardOpenOption.APPEND +: oos.map { _.jOO }: _*
+        ),
+        tw
+      )
+    )
 
 }
 
