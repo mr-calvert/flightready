@@ -22,8 +22,6 @@ object FSIO {
   }
 }
 
-trait FSIO[F[_], Mod <: FSIO.Module[F]] extends FSReadIO[F, Mod] with FSWriteIO[F, Mod]
-
 // TOOD; doc comments including links back to original method documentation
 trait FSReadIO[F[_], Mod <: FSIO.Module[F]] {
   // TODO: figure out watch services, how to wrap
@@ -94,7 +92,7 @@ trait FSReadIO[F[_], Mod <: FSIO.Module[F]] {
   // TODO: deal with CopyOptions... yuck
   def onByteChannelROF[X](p: Mod#P)
                          (run: SeekableByteChannelReadIO[F, Mod#ByteBufferIOMod] => F[X])
-                         (implicit fm: FlatMap[F], brkt: Bracket[F]): F[X]
+                         (implicit brkt: Bracket[F]): F[X]
 
   def onByteChannelROS[S[_[_], _], X](p: Mod#P)
                                      (run: SeekableByteChannelReadIO[F, Mod#ByteBufferIOMod] => S[F, X])
@@ -103,10 +101,10 @@ trait FSReadIO[F[_], Mod <: FSIO.Module[F]] {
   // TODO: getFileStore... a naked FileStore is a bad thing so it too needs to be wrapped, question is do we make it opaque and provide an algebra or do we inject a FileStore algebra inside? Or both
 }
 
-trait FSWriteIO[F[_], Mod <: FSIO.Module[F]] {
+trait FSIO[F[_], Mod <: FSIO.Module[F]] extends FSReadIO[F, Mod]  {
+  // TODO: document somewhere about my ambivalence about var args: 1) eta to Seq version works, 2) use of Seq is iffy, 3) seems to actually work
   def copy(src: Mod#P, dst: Mod#P, options: CopyOption*): F[Mod#P]
 
-  // TODO: document somewhere about my ambivalence about var args: 1) eta to Seq version works, 2) use of Seq is iffy, 3) seems to actually work
   def move(src: Mod#P, dst: Mod#P, options: MoveOption*): F[Mod#P]
 
   def createDirectories(p: Mod#P): F[Mod#P] // TODO: add FileAttribute parameter
@@ -134,7 +132,7 @@ trait FSWriteIO[F[_], Mod <: FSIO.Module[F]] {
 
   // TODO: setPosixFilePermissions... depends on PosixFilePermissions
 
-  def writeByteArray(p: Mod#P, content: Array[Byte]) // TODO: add OpenOptions parameter
+  def writeByteArray(p: Mod#P, content: Array[Byte]): F[Mod#P] // TODO: add OpenOptions parameter
 
   // TODO: writeLines... there might be some quick wins here for non-offensive collections being fed in here
 
@@ -143,11 +141,14 @@ trait FSWriteIO[F[_], Mod <: FSIO.Module[F]] {
   // TODO: newOutputStream... needs a nice little
 
 
-  def onByteChannelRWF[X](p: Mod#P)(run: SeekableByteChannelIO[F, Mod#ByteBufferIOMod] => F[X]): F[X]
+  def onByteChannelRWF[X](p: Mod#P)
+                         (run: SeekableByteChannelIO[F, Mod#ByteBufferIOMod] => F[X])
+                         (implicit brkt: Bracket[F]): F[X]
   // TODO: sort out if there's any reason for a source version, or just make sink version
-//  def onByteChannelRWS[S[_[_], _], X](p: Mod#P)
-//                                     (run: SeekableByteChannelIO[F, Mod#ByteBufferIOMod] => S[F, X])
-//                                     (implicit rs: ResourceSafety[S, F]): S[F, X]
+  def onByteChannelRWS[S[_[_], _], I, O]
+                      (p: Mod#P)
+                      (run: SeekableByteChannelIO[F, Mod#ByteBufferIOMod] => S[F, I] => S[F, O])
+                      (implicit rs: ResourceSafety[S, F]): S[F, O]
 }
 
 
