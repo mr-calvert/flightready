@@ -1,8 +1,8 @@
 package flightready.java.nio.file
 
-import flightready.IsoImmutableUnsafe
-
 import scala.language.higherKinds
+
+import flightready.IsoImmutableUnsafe
 import flightready.integration.category.Order
 
 
@@ -65,7 +65,6 @@ object IsoFSPathLogic {
 
 // TODO: add links to relevant methods on FileSystem and Path
 // TODO: define laws for [[FSPathLogic]] by reading docs
-// TODO: use tut for compiled and typechecked code snippets in doc comments
 /** Manipulates Strings and paths in the context of a specific file
   * system's path semantics.
   *
