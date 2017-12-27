@@ -5,7 +5,7 @@ import java.nio.file.{FileSystems, FileSystem, Path}
 import flightready.util.TaggedNewtype.@@
 
 
-object NIOFSPathTypes {
+object JVMFSPathTypes {
   /** Defines a singular `P`, `PF`, and `FS` types scoped to Java's
     * default [[FileSystem]].
     *
@@ -17,14 +17,14 @@ object NIOFSPathTypes {
     * IO instance will type check when passed to other IO instances,
     * so long as they are all built on this `NIOFilesystemTypes`.
     */
-  val default = new NIOFSPathTypes(FileSystems.getDefault)
+  val default = new JVMFSPathTypes(FileSystems.getDefault)
 }
 
 // TODO: test failure to compile when mixing Ps between IO instances
 /** Wraps a [[FileSystem]] instance and declares a `P` with a
   * dependently typed tag to prevent [[Path]]s from different file
   * systems from being used with the wrong IO instance. */
-class NIOFSPathTypes(val fs: FileSystem) extends FSPathTypes {
+class JVMFSPathTypes(val fs: FileSystem) extends FSPathTypes {
   trait InstanceTag
 
   type FS = FileSystem

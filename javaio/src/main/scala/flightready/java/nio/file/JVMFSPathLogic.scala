@@ -13,9 +13,9 @@ import flightready.integration.effect.ThunkWrap
 
 object NIOFSPathLogic {
   def forDefaultFS[F[_]: Sync]: IsoFSPathLogic.Module[F] =
-    NIOFSPathLogic[F](NIOFSPathTypes.default)
+    NIOFSPathLogic[F](JVMFSPathTypes.default)
 
-  def apply[F[_]: Sync](fsTypes: NIOFSPathTypes): IsoFSPathLogic.Module[F] =
+  def apply[F[_]: Sync](fsTypes: JVMFSPathTypes): IsoFSPathLogic.Module[F] =
     new IsoFSPathLogic.Module[F] {
       type FS = fsTypes.FS
       type P = fsTypes.P
@@ -91,9 +91,9 @@ class NIOFSPathLogic[F[_]: Sync, P <: Path](val fs: FileSystem)
 
 
 object NIOFSPath {
-  def forDefaultFS[F[_]: Applicative]: IsoFSPath.Module[F] = NIOFSPath[F](NIOFSPathTypes.default)
+  def forDefaultFS[F[_]: Applicative]: IsoFSPath.Module[F] = NIOFSPath[F](JVMFSPathTypes.default)
 
-  def apply[F[_]: Applicative](fsTypes: NIOFSPathTypes): IsoFSPath.Module[F] =
+  def apply[F[_]: Applicative](fsTypes: JVMFSPathTypes): IsoFSPath.Module[F] =
     new IsoFSPath.Module[F] {
       type FS = FileSystem
       type P = fsTypes.P

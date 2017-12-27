@@ -12,7 +12,7 @@ object NIOFSIO {
   class Module[F[_]] extends FSIO.Module[F] {
     def fsIO: FSIO[F, NIOFSIO.Module[F]] = ???
 
-    type P = NIOFSPathTypes#P
+    type P = JVMFSPathTypes#P
 
     type ByteBufferIOMod = NIOByteBufferModule[F]
     def byteBufferModule: ByteBufferIOMod = ???

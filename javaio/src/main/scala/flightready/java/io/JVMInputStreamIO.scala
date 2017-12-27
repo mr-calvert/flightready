@@ -6,7 +6,7 @@ import flightready.integration.effect.ThunkWrap
 
 import scala.language.higherKinds
 
-class IOInputStreamIO[F[_]](is: InputStream, tw: ThunkWrap[F]) extends InputStreamIO[F] {
+class JVMInputStreamIO[F[_]](is: InputStream, tw: ThunkWrap[F]) extends InputStreamIO[F] {
   private[java] def close: F[Unit] = tw.wrap(is.close)
 
   def available: F[Int] = tw.wrap(is.available)

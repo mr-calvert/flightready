@@ -8,14 +8,14 @@ import java.nio.file.{StandardOpenOption, Files}
 
 import flightready.integration.effect.{ThunkWrap, Bracket}
 import flightready.integration.streaming.ResourceSafety
-import flightready.java.io.{IOInputStreamIO, InputStreamIO}
+import flightready.java.io.{JVMInputStreamIO, InputStreamIO}
 import flightready.java.nio._
 
 object NIOFileIO {
   class Module[F[_]] extends FileIO.Module[F] {
     def fileIO: FileIO[F, NIOFileIO.Module[F]] = ???
 
-    type P = NIOFSPathTypes#P
+    type P = JVMFSPathTypes#P
 
     type ByteBufferIOMod = NIOByteBufferModule[F]
     def byteBufferModule: ByteBufferIOMod = ???
@@ -65,7 +65,7 @@ class NIOFileReadIO[F[_]](tw: ThunkWrap[F]) extends FileReadIO[F, NIOFileIO.Modu
     rs.bracketSource(newInputStream(p))(_.close)(s)
 
   private[this] def newInputStream(p: P) =
-    tw.wrap(new IOInputStreamIO(Files.newInputStream(p), tw))
+    tw.wrap(new JVMInputStreamIO(Files.newInputStream(p), tw))
 
 
   type SBCReadIO = SeekableByteChannelReadIO[F, NIOByteBufferModule[F]]
