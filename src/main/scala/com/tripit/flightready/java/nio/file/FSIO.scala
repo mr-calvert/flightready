@@ -1,15 +1,8 @@
 package com.tripit.flightready.java.nio.file
 
-import java.nio.file.StandardOpenOption
-
 import scala.language.higherKinds
-import java.nio.file.attribute.FileTime
 
-import com.tripit.flightready.integration.category.FlatMap
-import com.tripit.flightready.integration.effect.Bracket
-import com.tripit.flightready.integration.streaming.ResourceSafety
-import com.tripit.flightready.java.io.InputStreamIO
-import com.tripit.flightready.java.nio.{ByteBufferIO, SeekableByteChannelReadIO, SeekableByteChannelIO, ByteChannelWriteIO}
+import java.nio.file.attribute.FileTime
 
 object FSIO {
   trait Module[F[_]] {
@@ -17,10 +10,6 @@ object FSIO {
 
     /** Exchange type for file system paths */
     type P
-
-    // TODO: well actually... move this to a new higher level module encompassing more than just file io
-    type ByteBufferIOMod <: ByteBufferIO.Module[F]
-    def byteBufferModule: ByteBufferIOMod
   }
 }
 
@@ -29,13 +18,6 @@ trait FSIO[F[_], Mod <: FSIO.Module[F]] extends FSReadIO[F, Mod] with FSWriteIO[
   def copy(src: Mod#P, dst: Mod#P, options: CopyOption*): F[Mod#P]
   def move(src: Mod#P, dst: Mod#P, options: MoveOption*): F[Mod#P]
 
-  def onByteChannelRWF[X](p: Mod#P, openOptions: OpenRWOption*)
-                         (run: SeekableByteChannelIO[F, Mod#ByteBufferIOMod] => F[X])
-                         (implicit brkt: Bracket[F]): F[X]
-  def onByteChannelRWS[S[_[_], _], I, O]
-                      (p: Mod#P, openOptions: OpenRWOption*)
-                      (run: SeekableByteChannelIO[F, Mod#ByteBufferIOMod] => S[F, I] => S[F, O])
-                      (implicit rs: ResourceSafety[S, F]): S[F, O]
 }
 
 // TOOD; doc comments including links back to original method documentation
@@ -90,28 +72,7 @@ trait FSReadIO[F[_], Mod <: FSIO.Module[F]] {
 
   def probeContentType(p: Mod#P): F[String] // TODO: can we return something smarter than a String?
 
-  // TODO: Something less mutable than an Array??
-  def readAllBytes(p: Mod#P): F[Array[Byte]]
 
-  // TODO: encode CharSet without being horrible
-  // TODO: figure out the least horrible way to pass on a java list of strings and replace that Nothing
-//  def readAllLines(p: Mod#P): F[Nothing]
-
-  // TODO: newBufferedReader... algebra open buffered reader algebra executor and stream interface, needs a smart way of expressing CharSet, should also support byte streaming
-
-  // TODO: add OpenOptions parameter
-  def onInputStreamF[X](p: Mod#P)(run: InputStreamIO[F] => F[X])(implicit brkt: Bracket[F]): F[X]
-  def onInputStreamS[S[_[_], _], X](p: Mod#P)
-                                   (s: InputStreamIO[F] => S[F, X])
-                                   (implicit rs: ResourceSafety[S, F]): S[F, X]
-
-  def onByteChannelROF[X](p: Mod#P, openOption: OpenReadOption*)
-                         (run: SeekableByteChannelReadIO[F, Mod#ByteBufferIOMod] => F[X])
-                         (implicit brkt: Bracket[F]): F[X]
-
-  def onByteChannelROS[S[_[_], _], X](p: Mod#P, openOption: OpenReadOption*)
-                                     (run: SeekableByteChannelReadIO[F, Mod#ByteBufferIOMod] => S[F, X])
-                                     (implicit rs: ResourceSafety[S, F]): S[F, X]
 
   // TODO: getFileStore... a naked FileStore is a bad thing so it too needs to be wrapped, question is do we make it opaque and provide an algebra or do we inject a FileStore algebra inside? Or both
 }
@@ -136,23 +97,6 @@ trait FSWriteIO[F[_], Mod <: FSIO.Module[F]] {
   // TODO: setOwner... oh man... more UserPrinciple scariness
 
   // TODO: setPosixFilePermissions... depends on PosixFilePermissions
-
-  def writeByteArray(p: Mod#P, content: Array[Byte]): F[Mod#P] // TODO: add OpenOptions parameter
-
-  // TODO: writeLines... there might be some quick wins here for non-offensive collections being fed in here
-
-  // TODO: newBufferedWriter... be able to feed it either a naked Writer program or a PrintWriter program
-
-  // TODO: newOutputStream... needs a nice little
-
-  // TODO: taunt anybody who wants to use size or truncate in append mode and tell them to PR it
-  def onByteChannelAppendF[X](p: Mod#P, openOptions: OpenAppendOption*)
-                             (run: ByteChannelWriteIO[F, Mod#ByteBufferIOMod] => F[X])
-                             (implicit brkt: Bracket[F]): F[X]
-  def onByteChannelAppendS[S[_[_], _], I, O]
-                          (p: Mod#P, openOptions: OpenAppendOption*)
-                          (run: ByteChannelWriteIO[F, Mod#ByteBufferIOMod] => S[F, I] => S[F, O])
-                          (implicit rs: ResourceSafety[S, F]): S[F, O]
 }
 
 
@@ -169,31 +113,4 @@ object MoveOption {
   case object AtomicMove extends MoveOption
 }
 
-sealed trait OpenOption {
-  def jOO: java.nio.file.OpenOption
-}
 
-sealed trait OpenReadOption extends OpenOption
-object OpenReadOption {
-  case object DeleteOnClose extends OpenReadOption { def jOO = StandardOpenOption.DELETE_ON_CLOSE }
-}
-
-sealed trait OpenAppendOption extends OpenOption
-object OpenAppendOption {
-  case object Create extends OpenAppendOption { def jOO = StandardOpenOption.CREATE }
-  case object DeleteOnClose extends OpenAppendOption { def jOO = StandardOpenOption.DELETE_ON_CLOSE }
-  case object Sparse extends OpenAppendOption { def jOO = StandardOpenOption.SPARSE }
-  case object Sync extends OpenAppendOption { def jOO = StandardOpenOption.SYNC }
-  case object DSync extends OpenAppendOption { def jOO = StandardOpenOption.DSYNC }
-}
-
-sealed trait OpenRWOption extends OpenOption
-object OpenRWOption {
-  case object TruncateExisting extends OpenRWOption { def jOO = StandardOpenOption.TRUNCATE_EXISTING }
-  case object CreateNew extends OpenRWOption { def jOO = StandardOpenOption.CREATE_NEW }
-  case object Create extends OpenRWOption { def jOO = StandardOpenOption.CREATE }
-  case object DeleteOnClose extends OpenRWOption { def jOO = StandardOpenOption.DELETE_ON_CLOSE }
-  case object Sparse extends OpenRWOption { def jOO = StandardOpenOption.SPARSE }
-  case object Sync extends OpenRWOption { def jOO = StandardOpenOption.SYNC }
-  case object DSync extends OpenRWOption { def jOO = StandardOpenOption.DSYNC }
-}
