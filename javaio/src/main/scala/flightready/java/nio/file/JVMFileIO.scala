@@ -2,8 +2,6 @@ package flightready.java.nio.file
 
 import scala.language.higherKinds
 
-import cats._
-
 import java.nio.file.{StandardOpenOption, Files}
 
 import flightready.integration.effect.{ThunkWrap, Bracket}

@@ -4,23 +4,21 @@ import scala.language.higherKinds
 import scala.util.control.NonFatal
 import java.nio.file.{FileSystem, Path}
 
-import cats.Applicative
-import cats.effect.Sync
 import flightready.IsoImmutableUnsafe
-import flightready.integration.category.Order
+import flightready.integration.category.{Order, FlatMap}
 import flightready.integration.effect.ThunkWrap
 
 
 object NIOFSPathLogic {
-  def forDefaultFS[F[_]: Sync]: IsoFSPathLogic.Module[F] =
-    NIOFSPathLogic[F](JVMFSPathTypes.default)
+  def forDefaultFS[F[_]](tw: ThunkWrap[F], fm: FlatMap[F]): IsoFSPathLogic.Module[F] =
+    NIOFSPathLogic[F](JVMFSPathTypes.default, tw, fm)
 
-  def apply[F[_]: Sync](fsTypes: JVMFSPathTypes): IsoFSPathLogic.Module[F] =
+  def apply[F[_]](fsTypes: JVMFSPathTypes, tw: ThunkWrap[F], fm: FlatMap[F]): IsoFSPathLogic.Module[F] =
     new IsoFSPathLogic.Module[F] {
       type FS = fsTypes.FS
       type P = fsTypes.P
 
-      val fsPathLogic: FSPathLogic[F, P] = new NIOFSPathLogic[F, P](fsTypes.fs)
+      val fsPathLogic: FSPathLogic[F, P] = new NIOFSPathLogic[F, P](fsTypes.fs, tw, fm)
       val isoImmutableUnsafe: IsoImmutableUnsafe[fsTypes.P, Path] =
         new IsoImmutableUnsafe[fsTypes.P, Path] {
           def toOpaque(p: Path): fsTypes.P = fsTypes.tag(p)
@@ -48,20 +46,20 @@ object NIOFSPathLogic {
 /** Interprets [[FSPathLogic]] by deference to
   * [[java.nio.file.FileSystem]] and friends. */
 // TODO: introduce a SuspendWrap typeclass, or maybe just require FlatMap
-class NIOFSPathLogic[F[_]: Sync, P <: Path](val fs: FileSystem)
-      extends NIOFSPath[F, P](ThunkWrap.DelayInSync[F]) with FSPathLogic[F, P] {
+class NIOFSPathLogic[F[_], P <: Path](val fs: FileSystem, tw: ThunkWrap[F], fm: FlatMap[F])
+      extends NIOFSPath[F, P](tw) with FSPathLogic[F, P] {
 
   def path(p: String): F[P] =
-    Sync[F].delay(tag(fs.getPath(p)))
+    tw.wrap(tag(fs.getPath(p)))
 
   def resolve(base: P, other: String): F[P] =
-    Sync[F].delay(tag(base.resolve(other)))
+    tw.wrap(tag(base.resolve(other)))
 
   def resolveSibling(base: P, other: String): F[P] =
-    Sync[F].delay(tag(base.resolveSibling(other)))
+    tw.wrap(tag(base.resolveSibling(other)))
 
   def relativize(base: P, full: P): F[P] =
-    Sync[F].delay(tag(base.relativize(full)))
+    tw.wrap(tag(base.relativize(full)))
 
   def parent(p: P): F[P] =
     failNull(FSPathLogic.NoParent, tag(p.getParent))
@@ -70,35 +68,37 @@ class NIOFSPathLogic[F[_]: Sync, P <: Path](val fs: FileSystem)
     failNull(FSPathLogic.NoFilename, tag(p.getFileName))
 
   def name(idx: Int, p: P): F[P] =
-    Sync[F].delay(tag(p.getName(idx)))
+    tw.wrap(tag(p.getName(idx)))
 
   def subpath(p: P, start: Int, end: Int): F[P] =
-    Sync[F].delay(tag(p.subpath(start, end)))
+    tw.wrap(tag(p.subpath(start, end)))
 
   def startsWith(base: P, prefix: String): F[Boolean] =
-    Sync[F].delay(base.startsWith(prefix))
+    tw.wrap(base.startsWith(prefix))
 
   def endsWith(base: P, suffix: String): F[Boolean] =
-    Sync[F].delay(base.endsWith(suffix))
+    tw.wrap(base.endsWith(suffix))
 
   private[this] def failNull[X](failure: => Exception, x: => X): F[X] =
-    Sync[F].suspend {
-      val mX = x
-      if (mX == null) Sync[F].raiseError(failure)
-      else Sync[F].pure(x)
-    }
+    fm.flatMap(
+      tw.wrap {
+        val mX = x
+        if (mX == null) throw failure
+        else tw.wrap(x)
+      }
+    )(identity)
 }
 
 
 object NIOFSPath {
-  def forDefaultFS[F[_]: Applicative]: IsoFSPath.Module[F] = NIOFSPath[F](JVMFSPathTypes.default)
+  def forDefaultFS[F[_]](tw: ThunkWrap[F]): IsoFSPath.Module[F] = NIOFSPath[F](JVMFSPathTypes.default, tw)
 
-  def apply[F[_]: Applicative](fsTypes: JVMFSPathTypes): IsoFSPath.Module[F] =
+  def apply[F[_]](fsTypes: JVMFSPathTypes, tw: ThunkWrap[F]): IsoFSPath.Module[F] =
     new IsoFSPath.Module[F] {
       type FS = FileSystem
       type P = fsTypes.P
 
-      val fsPathIO: FSPath[F, fsTypes.P] = new NIOFSPath[F, fsTypes.P](ThunkWrap.intoPure[F])
+      val fsPathIO: FSPath[F, fsTypes.P] = new NIOFSPath[F, fsTypes.P](tw)
       val isoImmutableUnsafe: IsoImmutableUnsafe[fsTypes.P, Path] =
         new IsoImmutableUnsafe[fsTypes.P, Path] {
           def toOpaque(p: Path): fsTypes.P = fsTypes.tag(p)

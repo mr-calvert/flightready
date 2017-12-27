@@ -1,8 +1,7 @@
 lazy val commonOptions = Seq(
   version := "1.0",
   scalaVersion := "2.12.4",
-  scalacOptions += "-Ypartial-unification",
-  libraryDependencies += "org.typelevel" %% "cats-effect" % "0.5"
+  scalacOptions += "-Ypartial-unification"
 )
 
 lazy val core = (project in file("core"))
