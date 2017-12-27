@@ -1,7 +1,5 @@
 package com.tripit.flightready
 
-import com.tripit.flightready.java.nio.ByteBufferIO
-
 import scala.language.higherKinds
 
 /** Isomorphism between IO types and underlying mutable resources.
