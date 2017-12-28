@@ -38,7 +38,7 @@ class NIOFileIO[F[_]](val tw: ThunkWrap[F])
 
 
   private[this] def newByteChannelRW(p: P, oos: Seq[OpenRWOption]) =
-    tw.wrap(
+    tw(
       new NIOSeekableByteChannelIO(
         Files.newByteChannel(
           p,
@@ -52,7 +52,7 @@ class NIOFileIO[F[_]](val tw: ThunkWrap[F])
 class NIOFileReadIO[F[_]](tw: ThunkWrap[F]) extends FileReadIO[F, NIOFileIO.Module[F]] {
   type P = NIOFSIO.Module[F]#P
 
-  def readAllBytes(p: P): F[Array[Byte]] = tw.wrap(Files.readAllBytes(p))
+  def readAllBytes(p: P): F[Array[Byte]] = tw(Files.readAllBytes(p))
 
   def onInputStreamF[X](p: P)(run: InputStreamIO[F] => F[X])(implicit brkt: Bracket[F]): F[X] =
     brkt.bracket(newInputStream(p))(_.close)(run)
@@ -63,7 +63,7 @@ class NIOFileReadIO[F[_]](tw: ThunkWrap[F]) extends FileReadIO[F, NIOFileIO.Modu
     rs.bracketSource(newInputStream(p))(_.close)(s)
 
   private[this] def newInputStream(p: P) =
-    tw.wrap(new JVMInputStreamIO(Files.newInputStream(p), tw))
+    tw(new JVMInputStreamIO(Files.newInputStream(p), tw))
 
 
   type SBCReadIO = SeekableByteChannelReadIO[F, NIOByteBufferModule[F]]
@@ -79,7 +79,7 @@ class NIOFileReadIO[F[_]](tw: ThunkWrap[F]) extends FileReadIO[F, NIOFileIO.Modu
     rs.bracketSource(newByteChannelRO(p, openOptions))(_.close)(run)
 
   private[this] def newByteChannelRO(p: P, oos: Seq[OpenReadOption]) =
-    tw.wrap(
+    tw(
       new NIOSeekableByteChannelReadIO(
         Files.newByteChannel(
           p,
@@ -96,7 +96,7 @@ trait NIOFileWriteIOImpl[F[_]] extends FileWriteIO[F, NIOFileIO.Module[F]] {
   def tw: ThunkWrap[F]
 
   def writeByteArray(f: P, content: Array[Byte]): F[P] =
-    tw.wrap(
+    tw(
       NIOFSPathLogic.tagCheck(f, Files.createFile(f))
     )
 
@@ -113,7 +113,7 @@ trait NIOFileWriteIOImpl[F[_]] extends FileWriteIO[F, NIOFileIO.Module[F]] {
     rs.bracketSink(newByteChannelAppend(p, openOptions))(_.close)(run)
 
   private[this] def newByteChannelAppend(p: P, oos: Seq[OpenAppendOption]) =
-    tw.wrap(
+    tw(
       new NIOByteChannelWriteIO(
         Files.newByteChannel(
           p,

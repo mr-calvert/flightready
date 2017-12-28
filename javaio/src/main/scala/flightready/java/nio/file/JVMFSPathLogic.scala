@@ -6,7 +6,7 @@ import java.nio.file.{FileSystem, Path}
 
 import flightready.IsoImmutableUnsafe
 import flightready.integration.category.{Order, FlatMap}
-import flightready.integration.effect.ThunkWrap
+import flightready.integration.effect.{ThunkWrap, PureWrap}
 
 
 object NIOFSPathLogic {
@@ -50,16 +50,16 @@ class NIOFSPathLogic[F[_], P <: Path](val fs: FileSystem, tw: ThunkWrap[F], fm: 
       extends NIOFSPath[F, P](tw) with FSPathLogic[F, P] {
 
   def path(p: String): F[P] =
-    tw.wrap(tag(fs.getPath(p)))
+    tw(tag(fs.getPath(p)))
 
   def resolve(base: P, other: String): F[P] =
-    tw.wrap(tag(base.resolve(other)))
+    tw(tag(base.resolve(other)))
 
   def resolveSibling(base: P, other: String): F[P] =
-    tw.wrap(tag(base.resolveSibling(other)))
+    tw(tag(base.resolveSibling(other)))
 
   def relativize(base: P, full: P): F[P] =
-    tw.wrap(tag(base.relativize(full)))
+    tw(tag(base.relativize(full)))
 
   def parent(p: P): F[P] =
     failNull(FSPathLogic.NoParent, tag(p.getParent))
@@ -68,23 +68,23 @@ class NIOFSPathLogic[F[_], P <: Path](val fs: FileSystem, tw: ThunkWrap[F], fm: 
     failNull(FSPathLogic.NoFilename, tag(p.getFileName))
 
   def name(idx: Int, p: P): F[P] =
-    tw.wrap(tag(p.getName(idx)))
+    tw(tag(p.getName(idx)))
 
   def subpath(p: P, start: Int, end: Int): F[P] =
-    tw.wrap(tag(p.subpath(start, end)))
+    tw(tag(p.subpath(start, end)))
 
   def startsWith(base: P, prefix: String): F[Boolean] =
-    tw.wrap(base.startsWith(prefix))
+    tw(base.startsWith(prefix))
 
   def endsWith(base: P, suffix: String): F[Boolean] =
-    tw.wrap(base.endsWith(suffix))
+    tw(base.endsWith(suffix))
 
   private[this] def failNull[X](failure: => Exception, x: => X): F[X] =
     fm.flatMap(
-      tw.wrap {
+      tw {
         val mX = x
         if (mX == null) throw failure
-        else tw.wrap(x)
+        else tw(x)
       }
     )(identity)
 }
@@ -107,8 +107,8 @@ object NIOFSPath {
     }
 }
 
-class NIOFSPath[F[_], P <: Path](tw: ThunkWrap[F]) extends FSPath[F, P] {
-  def string(p: P): F[String] = tw.wrap(p.toString)
+class NIOFSPath[F[_], P <: Path](pw: PureWrap[F]) extends FSPath[F, P] {
+  def string(p: P): F[String] = pw(p.toString)
 
   def orderTC: Order[P] =
     new Order[P] {
@@ -116,43 +116,43 @@ class NIOFSPath[F[_], P <: Path](tw: ThunkWrap[F]) extends FSPath[F, P] {
     }
 
   def resolve(base: P, other: P): F[P] =
-    tw.wrap(tag(base.resolve(other)))
+    pw(tag(base.resolve(other)))
 
   def resolveSibling(base: P, other: P): F[P] =
-    tw.wrap(tag(base.resolveSibling(other)))
+    pw(tag(base.resolveSibling(other)))
 
   def normalize(p: P): F[P] =
-    tw.wrap(tag(p.normalize))
+    pw(tag(p.normalize))
 
   def subpathOption(p: P, start: Int, end: Int): F[Option[P]] =
     noneException(tag(p.subpath(start, end)))
 
   def parentOption(p: P): F[Option[P]] =
-    tw.wrap(Option(tag(p.getParent)))
+    pw(Option(tag(p.getParent)))
 
   def filenameOption(p: P): F[Option[P]] =
-    tw.wrap(Option(tag(p.getFileName)))
+    pw(Option(tag(p.getFileName)))
 
   def nameOption(idx: Int, p: P): F[Option[P]] =
     noneException(tag(p.getName(idx)))
 
   def isAbsolute(p: P): F[Boolean] =
-    tw.wrap(p.isAbsolute)
+    pw(p.isAbsolute)
 
   def rootOption(p: P): F[Option[P]] =
-    tw.wrap(Option(tag(p.getRoot)))
+    pw(Option(tag(p.getRoot)))
 
   def nameCount(p: P): F[Int] =
-    tw.wrap(p.getNameCount)
+    pw(p.getNameCount)
 
   def startsWith(base: P, prefix: P): F[Boolean] =
-    tw.wrap(base.startsWith(prefix))
+    pw(base.startsWith(prefix))
 
   def endsWith(base: P, suffix: P): F[Boolean] =
-    tw.wrap(base.endsWith(suffix))
+    pw(base.endsWith(suffix))
 
   def noneException[X](x: => X): F[Option[X]] =
-    tw.wrap {
+    pw {
       try {
         Option(x)
       } catch {

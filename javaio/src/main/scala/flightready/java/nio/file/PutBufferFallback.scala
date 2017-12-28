@@ -10,7 +10,7 @@ class PutBufferFallback[F[_], A: ClassTag](bufIO: BufferIO[F, A], tw: ThunkWrap[
   def putBufferViaBackingArray(rwBuf: BufferReadIO[F, A] with BufferIO[F, A]): F[Unit] =
     if(rwBuf.hasArray)
       fm.flatMap(rwBuf.remaining) { remaining =>
-        if (remaining <= 0) tw.wrap(())
+        if (remaining <= 0) tw.apply(())
         else bufIO.putArraySlice(rwBuf.array, rwBuf.arrayOffset, remaining)
       }
     else putBufferViaTempCopy(rwBuf)
@@ -18,7 +18,7 @@ class PutBufferFallback[F[_], A: ClassTag](bufIO: BufferIO[F, A], tw: ThunkWrap[
   def putBufferViaTempCopy(in: BufferReadIO[F, A]): F[Unit] =
     fm.flatMap(in.remaining) { remaining =>
       if (remaining < 0)
-        tw.wrap(())
+        tw(())
       else {
         val tmp = new Array[A](remaining)
         fm.flatMap(in.getInto(tmp)) { _ => bufIO.putArray(tmp) }
