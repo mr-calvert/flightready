@@ -6,7 +6,7 @@ import java.nio.file.{FileSystem, Path}
 
 import flightready.IsoImmutableUnsafe
 import flightready.integration.category.{Order, FlatMap}
-import flightready.integration.effect.{ThunkWrap, PureWrap}
+import flightready.integration.effect.{PureWrap, ThunkWrap, CatchWrap}
 
 
 object NIOFSPathLogic {
@@ -46,20 +46,20 @@ object NIOFSPathLogic {
 /** Interprets [[FSPathLogic]] by deference to
   * [[java.nio.file.FileSystem]] and friends. */
 // TODO: introduce a SuspendWrap typeclass, or maybe just require FlatMap
-class NIOFSPathLogic[F[_], P <: Path](val fs: FileSystem, tw: ThunkWrap[F], fm: FlatMap[F])
-      extends NIOFSPath[F, P](tw) with FSPathLogic[F, P] {
+class NIOFSPathLogic[F[_], P <: Path](val fs: FileSystem, cw: CatchWrap[F], fm: FlatMap[F])
+      extends NIOFSPath[F, P](cw) with FSPathLogic[F, P] {
 
   def path(p: String): F[P] =
-    tw(tag(fs.getPath(p)))
+    cw(tag(fs.getPath(p)))
 
   def resolve(base: P, other: String): F[P] =
-    tw(tag(base.resolve(other)))
+    cw(tag(base.resolve(other)))
 
   def resolveSibling(base: P, other: String): F[P] =
-    tw(tag(base.resolveSibling(other)))
+    cw(tag(base.resolveSibling(other)))
 
   def relativize(base: P, full: P): F[P] =
-    tw(tag(base.relativize(full)))
+    cw(tag(base.relativize(full)))
 
   def parent(p: P): F[P] =
     failNull(FSPathLogic.NoParent, tag(p.getParent))
@@ -68,23 +68,23 @@ class NIOFSPathLogic[F[_], P <: Path](val fs: FileSystem, tw: ThunkWrap[F], fm: 
     failNull(FSPathLogic.NoFilename, tag(p.getFileName))
 
   def name(idx: Int, p: P): F[P] =
-    tw(tag(p.getName(idx)))
+    cw(tag(p.getName(idx)))
 
   def subpath(p: P, start: Int, end: Int): F[P] =
-    tw(tag(p.subpath(start, end)))
+    cw(tag(p.subpath(start, end)))
 
   def startsWith(base: P, prefix: String): F[Boolean] =
-    tw(base.startsWith(prefix))
+    cw(base.startsWith(prefix))
 
   def endsWith(base: P, suffix: String): F[Boolean] =
-    tw(base.endsWith(suffix))
+    cw(base.endsWith(suffix))
 
   private[this] def failNull[X](failure: => Exception, x: => X): F[X] =
     fm.flatMap(
-      tw {
+      cw {
         val mX = x
         if (mX == null) throw failure
-        else tw(x)
+        else cw(x)
       }
     )(identity)
 }
