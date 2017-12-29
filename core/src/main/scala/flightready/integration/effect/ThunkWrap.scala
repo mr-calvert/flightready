@@ -1,7 +1,5 @@
 package flightready.integration.effect
 
-import scala.language.higherKinds
-
 /** Same signature as [[ThunkWrap]] but without the requirement to
   * delay execution or catch exceptions.
   *

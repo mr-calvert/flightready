@@ -1,7 +1,5 @@
 package flightready.java.nio.file
 
-import scala.language.higherKinds
-
 import flightready.IsoImmutableUnsafe
 import flightready.integration.category.Order
 

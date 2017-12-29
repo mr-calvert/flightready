@@ -1,6 +1,5 @@
 package flightready.java.nio.file
 
-import scala.language.higherKinds
 import scala.util.control.NonFatal
 import java.nio.file.{FileSystem, Path}
 
@@ -156,7 +155,7 @@ class NIOFSPath[F[_], P <: Path](pw: PureWrap[F]) extends FSPath[F, P] {
       try {
         Option(x)
       } catch {
-        case NonFatal(e) => None
+        case NonFatal(_) => None
       }
     }
 

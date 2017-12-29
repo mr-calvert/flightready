@@ -1,13 +1,12 @@
 package flightready.java.nio
 
-import scala.language.higherKinds
-
 import cats._
 import cats.implicits._
 
 import flightready.java.nio.file.FSPath
 
-/** Examples/compilation checks for FSPath/FSPathLogic functions.
+/** Examples/compilation checks/tests for FSPath/FSPathLogic
+  * functions.
   *
   * Defines functions which demonstrate the intended usage for
   * FSPath/FSPathLogic traits AND ensures that they compile.

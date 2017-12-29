@@ -1,6 +1,5 @@
 package flightready.java.nio
 
-import scala.language.higherKinds
 import java.nio._
 
 import flightready.integration.category.FlatMap
@@ -19,18 +18,18 @@ trait NIOBufferReadIO[F[_], A] extends BufferReadIO[F, A] { self: BufferAndWrap[
   def capacity: Int = buf.capacity
 
   def limit: F[Int] = tw(buf.limit)
-  def mark: F[Unit] = tw(buf.mark)
+  def mark: F[Unit] = tw { buf.mark; () }
   def position: F[Int] = tw(buf.position)
   def hasRemaining: F[Boolean] = tw(buf.hasRemaining)
   def remaining: F[Int] = tw(buf.remaining)
 
-  def setLimit(limit: Int): F[Unit] = tw(buf.limit(limit))
-  def setPosition(position: Int): F[Unit] = tw(buf.position(position))
+  def setLimit(limit: Int): F[Unit] = tw { buf.limit(limit); () }
+  def setPosition(position: Int): F[Unit] = tw { buf.position(position); () }
 
-  def clear: F[Unit] = tw(buf.clear)
-  def flip: F[Unit] = tw(buf.flip)
-  def reset: F[Unit] = tw(buf.reset)
-  def rewind: F[Unit] = tw(buf.rewind)
+  def clear: F[Unit] = tw { buf.clear; () }
+  def flip: F[Unit] = tw { buf.flip; () }
+  def reset: F[Unit] = tw { buf.reset; () }
+  def rewind: F[Unit] = tw { buf.rewind; () }
 }
 
 trait NIOBufferIO[F[_], A] extends BufferIO[F, A] { self: BufferAndWrap[F] =>
@@ -88,8 +87,8 @@ class NIOByteBufferReadIO[F[_]](private[nio] val buf: ByteBuffer, val tw: ThunkW
 
   def get: F[Byte] = tw(buf.get)
   def getAt(idx: Int): F[Byte] = tw(buf.get(idx))
-  def getInto(dst: Array[Byte]): F[Unit] = tw(buf.get(dst))
-  def getIntoSlice(dst: Array[Byte], ofs: Int, len: Int): F[Unit] = tw(buf.get(dst, ofs, len))
+  def getInto(dst: Array[Byte]): F[Unit] = tw { buf.get(dst); () }
+  def getIntoSlice(dst: Array[Byte], ofs: Int, len: Int): F[Unit] = tw { buf.get(dst, ofs, len); () }
 }
 
 class NIOByteBufferIO[F[_]](buf: ByteBuffer, tw: ThunkWrap[F])
@@ -101,7 +100,7 @@ class NIOByteBufferIO[F[_]](buf: ByteBuffer, tw: ThunkWrap[F])
   def duplicateRW: F[ByteBufferIO[F]] = tw(new NIOByteBufferIO(buf.duplicate, tw))
   def sliceRW: F[ByteBufferIO[F]] = tw(new NIOByteBufferIO(buf.slice, tw))
 
-  def setByteOrder(bo: ByteOrder): F[Unit] = tw(buf.order(bo))
+  def setByteOrder(bo: ByteOrder): F[Unit] = tw { buf.order(bo); () }
 
   override def asCharBufferRO: F[CharBufferReadIO[F]] =
     tw(new NIOCharBufferReadIO[F](buf.asReadOnlyBuffer.asCharBuffer, tw))
@@ -124,34 +123,34 @@ class NIOByteBufferIO[F[_]](buf: ByteBuffer, tw: ThunkWrap[F])
   def asDoubleBufferRW: F[DoubleBufferIO[F]] = tw(new NIODoubleBufferIO[F](buf.asDoubleBuffer, tw))
 
   def array: Array[Byte] = buf.array
-  def compact: F[Unit] = tw(buf.compact)
+  def compact: F[Unit] = tw { buf.compact; () }
 
-  def put(f: Byte): F[Unit] = tw(buf.put(f))
-  def putArray(fs: Array[Byte]): F[Unit] = tw(buf.put(fs))
-  def putArraySlice(ss: Array[Byte], ofs: Int, len: Int): F[Unit] = tw(buf.put(ss, ofs, len))
-  def putAt(idx: Int, s: Byte): F[Unit] = tw(buf.put(idx, s))
+  def put(f: Byte): F[Unit] = tw { buf.put(f); () }
+  def putArray(fs: Array[Byte]): F[Unit] = tw { buf.put(fs); () }
+  def putArraySlice(ss: Array[Byte], ofs: Int, len: Int): F[Unit] = tw { buf.put(ss, ofs, len); () }
+  def putAt(idx: Int, s: Byte): F[Unit] = tw { buf.put(idx, s); () }
 
   def putBuffer(in: ByteBufferReadIO[F])(implicit fm: FlatMap[F]): F[Unit] = {
     val fb = new PutBufferFallback[F, Byte](this, tw, fm)
     in match {
-      case nio: NIOByteBufferIO[F] => tw(buf.put(nio.buf))
+      case nio: NIOByteBufferIO[F] => tw { buf.put(nio.buf); () }
       case rwBuf: BufferIO[F, Byte]@unchecked => fb.putBufferViaBackingArray(rwBuf)
       case in: ByteBufferReadIO[F] => fb.putBufferViaTempCopy(in)
     }
   }
 
-  def putChar(c: Char): F[Unit] = tw(buf.putChar(c))
-  def putCharAt(idx: Int, c: Char): F[Unit] = tw(buf.putChar(idx, c))
-  def putShort(s: Short): F[Unit] = tw(buf.putShort(s))
-  def putShortAt(idx: Int, s: Short): F[Unit] = tw(buf.putShort(idx, s))
-  def putInt(i: Int): F[Unit] = tw(buf.putInt(i))
-  def putIntAt(idx: Int, i: Int): F[Unit] = tw(buf.putInt(i, idx))
-  def putLong(l: Long): F[Unit] = tw(buf.putLong(l))
-  def putLongAt(idx: Int, l: Long): F[Unit] = tw(buf.putLong(idx, l))
-  def putFloat(f: Float): F[Unit] = tw(buf.putFloat(f))
-  def putFloatAt(idx: Int, f: Float): F[Unit] = tw(buf.putFloat(idx, f))
-  def putDouble(d: Double): F[Unit] = tw(buf.putDouble(d))
-  def putDoubleAt(idx: Int, d: Double): F[Unit]  = tw(buf.putDouble(idx, d))
+  def putChar(c: Char): F[Unit] = tw { buf.putChar(c); () }
+  def putCharAt(idx: Int, c: Char): F[Unit] = tw { buf.putChar(idx, c); () }
+  def putShort(s: Short): F[Unit] = tw { buf.putShort(s); () }
+  def putShortAt(idx: Int, s: Short): F[Unit] = tw { buf.putShort(idx, s); () }
+  def putInt(i: Int): F[Unit] = tw { buf.putInt(i); () }
+  def putIntAt(idx: Int, i: Int): F[Unit] = tw { buf.putInt(i, idx); () }
+  def putLong(l: Long): F[Unit] = tw { buf.putLong(l); () }
+  def putLongAt(idx: Int, l: Long): F[Unit] = tw { buf.putLong(idx, l); () }
+  def putFloat(f: Float): F[Unit] = tw { buf.putFloat(f); () }
+  def putFloatAt(idx: Int, f: Float): F[Unit] = tw { buf.putFloat(idx, f); () }
+  def putDouble(d: Double): F[Unit] = tw { buf.putDouble(d); () }
+  def putDoubleAt(idx: Int, d: Double): F[Unit]  = tw { buf.putDouble(idx, d); () }
 }
 
 
@@ -199,17 +198,17 @@ class NIOCharBufferReadIO[F[_]](private[nio] val buf: CharBuffer, val tw: ThunkW
   def charAt(ofs: Int): F[Char] = tw(buf.charAt(ofs))
   def get: F[Char] = tw(buf.get)
   def getAt(idx: Int): F[Char] = tw(buf.get(idx))
-  def getInto(dst: Array[Char]): F[Unit] = tw(buf.get(dst))
-  def getIntoSlice(dst: Array[Char], ofs: Int, len: Int): F[Unit] = tw(buf.get(dst, ofs, len))
+  def getInto(dst: Array[Char]): F[Unit] = tw { buf.get(dst); () }
+  def getIntoSlice(dst: Array[Char], ofs: Int, len: Int): F[Unit] = tw { buf.get(dst, ofs, len); () }
 
   def read(dst: CharBufferIO[F])(implicit fm: FlatMap[F]): F[Int] =
     dst match {
       case nio: NIOCharBufferIO[F] => tw(buf.read(nio.buf))
       case dst: CharBufferIO[F] =>
         if (dst.hasArray)
-          tw { throw new Exception("not implemented yet") ; 0 } // TODO: figure out read's real behavior and emulate it
+          tw { throw new Exception("not implemented yet") } // TODO: figure out read's real behavior and emulate it
         else
-          tw { throw new Exception("not implemented yet") ; 0 } // TODO: figure out read's real behavior and emulate it
+          tw { throw new Exception("not implemented yet") } // TODO: figure out read's real behavior and emulate it
     }
 }
 
@@ -228,19 +227,19 @@ class NIOCharBufferIO[F[_]](buf: CharBuffer, tw: ThunkWrap[F])
 
   def array: Array[Char] = buf.array
 
-  def compact: F[Unit] = tw(buf.compact)
+  def compact: F[Unit] = tw { buf.compact; () }
 
-  def put(f: Char): F[Unit] = tw(buf.put(f))
-  def putArray(fs: Array[Char]): F[Unit] = tw(buf.put(fs))
-  def putArraySlice(ss: Array[Char], ofs: Int, len: Int): F[Unit] = tw(buf.put(ss, ofs, len))
-  def putAt(idx: Int, s: Char): F[Unit] = tw(buf.put(idx, s))
-  def putString(s: String): F[Unit] = tw(buf.put(s))
-  def putStringSlice(s: String, start: Int, end: Int): F[Unit] = tw(buf.put(s, start, end))
+  def put(f: Char): F[Unit] = tw { buf.put(f); () }
+  def putArray(fs: Array[Char]): F[Unit] = tw { buf.put(fs); () }
+  def putArraySlice(ss: Array[Char], ofs: Int, len: Int): F[Unit] = tw { buf.put(ss, ofs, len); () }
+  def putAt(idx: Int, s: Char): F[Unit] = tw { buf.put(idx, s); () }
+  def putString(s: String): F[Unit] = tw { buf.put(s); () }
+  def putStringSlice(s: String, start: Int, end: Int): F[Unit] = tw { buf.put(s, start, end); () }
 
   def putBuffer(in: CharBufferReadIO[F])(implicit fm: FlatMap[F]): F[Unit] = {
     val fb = new PutBufferFallback[F, Char](this, tw, fm)
     in match {
-      case nio: NIOCharBufferIO[F] => tw(buf.put(nio.buf))
+      case nio: NIOCharBufferIO[F] => tw { buf.put(nio.buf); () }
       case rwBuf: BufferIO[F, Char]@unchecked => fb.putBufferViaBackingArray(rwBuf)
       case in: CharBufferReadIO[F] => fb.putBufferViaTempCopy(in)
     }
@@ -283,8 +282,8 @@ class NIOShortBufferReadIO[F[_]](private[nio] val buf: ShortBuffer, val tw: Thun
 
   def get: F[Short] = tw(buf.get)
   def getAt(idx: Int): F[Short] = tw(buf.get(idx))
-  def getInto(dst: Array[Short]): F[Unit] = tw(buf.get(dst))
-  def getIntoSlice(dst: Array[Short], ofs: Int, len: Int): F[Unit] = tw(buf.get(dst, ofs, len))
+  def getInto(dst: Array[Short]): F[Unit] = tw { buf.get(dst); () }
+  def getIntoSlice(dst: Array[Short], ofs: Int, len: Int): F[Unit] = tw { buf.get(dst, ofs, len); () }
 }
 
 class NIOShortBufferIO[F[_]](buf: ShortBuffer, tw: ThunkWrap[F])
@@ -298,17 +297,17 @@ class NIOShortBufferIO[F[_]](buf: ShortBuffer, tw: ThunkWrap[F])
 
   def array: Array[Short] = buf.array
 
-  def compact: F[Unit] = tw(buf.compact)
+  def compact: F[Unit] = tw { buf.compact; () }
 
-  def put(f: Short): F[Unit] = tw(buf.put(f))
-  def putArray(fs: Array[Short]): F[Unit] = tw(buf.put(fs))
-  def putArraySlice(ss: Array[Short], ofs: Int, len: Int): F[Unit] = tw(buf.put(ss, ofs, len))
-  def putAt(idx: Int, s: Short): F[Unit] = tw(buf.put(idx, s))
+  def put(f: Short): F[Unit] = tw { buf.put(f); () }
+  def putArray(fs: Array[Short]): F[Unit] = tw { buf.put(fs); () }
+  def putArraySlice(ss: Array[Short], ofs: Int, len: Int): F[Unit] = tw { buf.put(ss, ofs, len); () }
+  def putAt(idx: Int, s: Short): F[Unit] = tw { buf.put(idx, s); () }
 
   def putBuffer(in: ShortBufferReadIO[F])(implicit fm: FlatMap[F]): F[Unit] = {
     val fb = new PutBufferFallback[F, Short](this, tw, fm)
     in match {
-      case nio: NIOShortBufferIO[F] => tw(buf.put(nio.buf))
+      case nio: NIOShortBufferIO[F] => tw { buf.put(nio.buf); () }
       case rwBuf: BufferIO[F, Short]@unchecked => fb.putBufferViaBackingArray(rwBuf)
       case in: ShortBufferReadIO[F] => fb.putBufferViaTempCopy(in)
     }
@@ -352,8 +351,8 @@ class NIOIntBufferReadIO[F[_]](private[nio] val buf: IntBuffer, val tw: ThunkWra
 
   def get: F[Int] = tw(buf.get)
   def getAt(idx: Int): F[Int] = tw(buf.get(idx))
-  def getInto(dst: Array[Int]): F[Unit] = tw(buf.get(dst))
-  def getIntoSlice(dst: Array[Int], ofs: Int, len: Int): F[Unit] = tw(buf.get(dst, ofs, len))
+  def getInto(dst: Array[Int]): F[Unit] = tw { buf.get(dst); () }
+  def getIntoSlice(dst: Array[Int], ofs: Int, len: Int): F[Unit] = tw { buf.get(dst, ofs, len); () }
 }
 
 class NIOIntBufferIO[F[_]](buf: IntBuffer, tw: ThunkWrap[F])
@@ -367,17 +366,17 @@ class NIOIntBufferIO[F[_]](buf: IntBuffer, tw: ThunkWrap[F])
   def duplicateRW: F[IntBufferIO[F]] = tw(new NIOIntBufferIO(buf.duplicate, tw))
   def sliceRW: F[IntBufferIO[F]] = tw(new NIOIntBufferIO(buf.slice, tw))
 
-  def compact: F[Unit] = tw(buf.compact)
+  def compact: F[Unit] = tw { buf.compact; () }
 
-  def put(f: Int): F[Unit] = tw(buf.put(f))
-  def putArray(fs: Array[Int]): F[Unit] = tw(buf.put(fs))
-  def putArraySlice(fs: Array[Int], ofs: Int, len: Int): F[Unit] = tw(buf.put(fs, ofs, len))
-  def putAt(idx: Int, f: Int): F[Unit] = tw(buf.put(idx, f))
+  def put(f: Int): F[Unit] = tw { buf.put(f); () }
+  def putArray(fs: Array[Int]): F[Unit] = tw { buf.put(fs); () }
+  def putArraySlice(fs: Array[Int], ofs: Int, len: Int): F[Unit] = tw { buf.put(fs, ofs, len); () }
+  def putAt(idx: Int, f: Int): F[Unit] = tw { buf.put(idx, f); () }
 
   def putBuffer(in: IntBufferReadIO[F])(implicit fm: FlatMap[F]): F[Unit] = {
     val fb = new PutBufferFallback[F, Int](this, tw, fm)
     in match {
-      case nio: NIOIntBufferIO[F] => tw(buf.put(nio.buf))
+      case nio: NIOIntBufferIO[F] => tw { buf.put(nio.buf); () }
       case rwBuf: BufferIO[F, Int]@unchecked => fb.putBufferViaBackingArray(rwBuf)
       case in: IntBufferReadIO[F] => fb.putBufferViaTempCopy(in)
     }
@@ -421,8 +420,8 @@ class NIOLongBufferReadIO[F[_]](private[nio] val buf: LongBuffer, val tw: ThunkW
 
   def get: F[Long] = tw(buf.get)
   def getAt(idx: Int): F[Long] = tw(buf.get(idx))
-  def getInto(dst: Array[Long]): F[Unit] = tw(buf.get(dst))
-  def getIntoSlice(dst: Array[Long], ofs: Int, len: Int): F[Unit] = tw(buf.get(dst, ofs, len))
+  def getInto(dst: Array[Long]): F[Unit] = tw { buf.get(dst); () }
+  def getIntoSlice(dst: Array[Long], ofs: Int, len: Int): F[Unit] = tw { buf.get(dst, ofs, len); () }
 }
 
 class NIOLongBufferIO[F[_]](buf: LongBuffer, tw: ThunkWrap[F])
@@ -436,17 +435,17 @@ class NIOLongBufferIO[F[_]](buf: LongBuffer, tw: ThunkWrap[F])
   def duplicateRW: F[LongBufferIO[F]] = tw(new NIOLongBufferIO(buf.duplicate, tw))
   def sliceRW: F[LongBufferIO[F]] = tw(new NIOLongBufferIO(buf.slice, tw))
 
-  def compact: F[Unit] = tw(buf.compact)
+  def compact: F[Unit] = tw { buf.compact; () }
 
-  def put(f: Long): F[Unit] = tw(buf.put(f))
-  def putArray(fs: Array[Long]): F[Unit] = tw(buf.put(fs))
-  def putArraySlice(fs: Array[Long], ofs: Int, len: Int): F[Unit] = tw(buf.put(fs, ofs, len))
-  def putAt(idx: Int, f: Long): F[Unit] = tw(buf.put(idx, f))
+  def put(f: Long): F[Unit] = tw { buf.put(f); () }
+  def putArray(fs: Array[Long]): F[Unit] = tw { buf.put(fs); () }
+  def putArraySlice(fs: Array[Long], ofs: Int, len: Int): F[Unit] = tw { buf.put(fs, ofs, len); () }
+  def putAt(idx: Int, f: Long): F[Unit] = tw { buf.put(idx, f); () }
 
   def putBuffer(in: LongBufferReadIO[F])(implicit fm: FlatMap[F]): F[Unit] = {
     val fb = new PutBufferFallback[F, Long](this, tw, fm)
     in match {
-      case nio: NIOLongBufferIO[F] => tw(buf.put(nio.buf))
+      case nio: NIOLongBufferIO[F] => tw { buf.put(nio.buf); () }
       case rwBuf: BufferIO[F, Long]@unchecked => fb.putBufferViaBackingArray(rwBuf)
       case in: LongBufferReadIO[F] => fb.putBufferViaTempCopy(in)
     }
@@ -490,8 +489,8 @@ class NIOFloatBufferReadIO[F[_]](private[nio] val buf: FloatBuffer, val tw: Thun
 
   def get: F[Float] = tw(buf.get)
   def getAt(idx: Int): F[Float] = tw(buf.get(idx))
-  def getInto(dst: Array[Float]): F[Unit] = tw(buf.get(dst))
-  def getIntoSlice(dst: Array[Float], ofs: Int, len: Int): F[Unit] = tw(buf.get(dst, ofs, len))
+  def getInto(dst: Array[Float]): F[Unit] = tw { buf.get(dst); () }
+  def getIntoSlice(dst: Array[Float], ofs: Int, len: Int): F[Unit] = tw { buf.get(dst, ofs, len); () }
 }
 
 class NIOFloatBufferIO[F[_]](buf: FloatBuffer, tw: ThunkWrap[F])
@@ -505,17 +504,17 @@ class NIOFloatBufferIO[F[_]](buf: FloatBuffer, tw: ThunkWrap[F])
   def duplicateRW: F[FloatBufferIO[F]] = tw(new NIOFloatBufferIO(buf.duplicate, tw))
   def sliceRW: F[FloatBufferIO[F]] = tw(new NIOFloatBufferIO(buf.slice, tw))
 
-  def compact: F[Unit] = tw(buf.compact)
+  def compact: F[Unit] = tw{ buf.compact; () }
 
-  def put(f: Float): F[Unit] = tw(buf.put(f))
-  def putArray(fs: Array[Float]): F[Unit] = tw(buf.put(fs))
-  def putArraySlice(fs: Array[Float], ofs: Int, len: Int): F[Unit] = tw(buf.put(fs, ofs, len))
-  def putAt(idx: Int, f: Float): F[Unit] = tw(buf.put(idx, f))
+  def put(f: Float): F[Unit] = tw { buf.put(f); () }
+  def putArray(fs: Array[Float]): F[Unit] = tw { buf.put(fs); () }
+  def putArraySlice(fs: Array[Float], ofs: Int, len: Int): F[Unit] = tw { buf.put(fs, ofs, len); () }
+  def putAt(idx: Int, f: Float): F[Unit] = tw { buf.put(idx, f); () }
 
   def putBuffer(in: FloatBufferReadIO[F])(implicit fm: FlatMap[F]): F[Unit] = {
     val fb = new PutBufferFallback[F, Float](this, tw, fm)
     in match {
-      case nio: NIOFloatBufferIO[F] => tw(buf.put(nio.buf))
+      case nio: NIOFloatBufferIO[F] => tw { buf.put(nio.buf); () }
       case rwBuf: BufferIO[F, Float]@unchecked => fb.putBufferViaBackingArray(rwBuf)
       case in: FloatBufferReadIO[F] => fb.putBufferViaTempCopy(in)
     }
@@ -559,8 +558,8 @@ class NIODoubleBufferReadIO[F[_]](private[nio] val buf: DoubleBuffer, val tw: Th
 
   def get: F[Double] = tw(buf.get)
   def getAt(idx: Int): F[Double] = tw(buf.get(idx))
-  def getInto(dst: Array[Double]): F[Unit] = tw(buf.get(dst))
-  def getIntoSlice(dst: Array[Double], ofs: Int, len: Int): F[Unit] = tw(buf.get(dst, ofs, len))
+  def getInto(dst: Array[Double]): F[Unit] = tw { buf.get(dst); () }
+  def getIntoSlice(dst: Array[Double], ofs: Int, len: Int): F[Unit] = tw { buf.get(dst, ofs, len); () }
 }
 
 class NIODoubleBufferIO[F[_]](buf: DoubleBuffer, tw: ThunkWrap[F])
@@ -574,17 +573,17 @@ class NIODoubleBufferIO[F[_]](buf: DoubleBuffer, tw: ThunkWrap[F])
   def duplicateRW: F[DoubleBufferIO[F]] = tw(new NIODoubleBufferIO(buf.duplicate, tw))
   def sliceRW: F[DoubleBufferIO[F]] = tw(new NIODoubleBufferIO(buf.slice, tw))
 
-  def compact: F[Unit] = tw(buf.compact)
+  def compact: F[Unit] = tw { buf.compact; () }
 
-  def put(d: Double): F[Unit] = tw(buf.put(d))
-  def putArray(ds: Array[Double]): F[Unit] = tw(buf.put(ds))
-  def putArraySlice(ds: Array[Double], ofs: Int, len: Int): F[Unit] = tw(buf.put(ds, ofs, len))
-  def putAt(idx: Int, d: Double): F[Unit] = tw(buf.put(idx, d))
+  def put(d: Double): F[Unit] = tw { buf.put(d); () }
+  def putArray(ds: Array[Double]): F[Unit] = tw { buf.put(ds); () }
+  def putArraySlice(ds: Array[Double], ofs: Int, len: Int): F[Unit] = tw { buf.put(ds, ofs, len); () }
+  def putAt(idx: Int, d: Double): F[Unit] = tw { buf.put(idx, d); () }
 
   def putBuffer(in: DoubleBufferReadIO[F])(implicit fm: FlatMap[F]): F[Unit] = {
     val fb = new PutBufferFallback[F, Double](this, tw, fm)
     in match {
-      case nio: NIODoubleBufferIO[F] => tw(buf.put(nio.buf))
+      case nio: NIODoubleBufferIO[F] => tw { buf.put(nio.buf); () }
       case rwBuf: BufferIO[F, Double]@unchecked => fb.putBufferViaBackingArray(rwBuf)
       case in: DoubleBufferReadIO[F] => fb.putBufferViaTempCopy(in)
     }

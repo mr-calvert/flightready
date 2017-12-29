@@ -1,7 +1,5 @@
 package flightready.file_toy
 
-import scala.language.higherKinds
-
 import java.nio.file.{Paths, Path}
 
 import cats._

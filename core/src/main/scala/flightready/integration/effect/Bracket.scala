@@ -1,6 +1,5 @@
 package flightready.integration.effect
 
-import scala.language.higherKinds
 
 /** Typeclass for embedding bracket combinator resource safety. */
 trait Bracket[F[_]] {

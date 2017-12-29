@@ -1,6 +1,5 @@
 package flightready.java.nio.file
 
-import scala.language.higherKinds
 import java.nio.file.{LinkOption, Files}
 import java.nio.file.attribute.FileTime
 

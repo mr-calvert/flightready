@@ -1,7 +1,5 @@
 package flightready.java.nio.file
 
-import scala.language.higherKinds
-
 import java.nio.file.attribute.FileTime
 
 object FSIO {

@@ -1,6 +1,5 @@
 package flightready
 
-import scala.language.higherKinds
 
 /** Isomorphism between IO types and underlying immutable but unsafe
   * resources.

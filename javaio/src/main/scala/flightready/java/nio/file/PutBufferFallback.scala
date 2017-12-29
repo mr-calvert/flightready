@@ -1,6 +1,5 @@
 package flightready.java.nio.file
 
-import scala.language.higherKinds
 import scala.reflect.ClassTag
 import flightready.integration.category.FlatMap
 import flightready.integration.effect.ThunkWrap

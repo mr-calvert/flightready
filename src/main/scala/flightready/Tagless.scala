@@ -1,7 +1,5 @@
 package flightready
 
-import scala.language.higherKinds
-
 // TODO: Consider pulling this into a note and ditching Run
 // TODO: Review that it makes sense without C and MkIO
 // TODO: What to say about Modules

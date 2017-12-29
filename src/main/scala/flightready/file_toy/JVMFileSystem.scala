@@ -1,6 +1,5 @@
 package flightready.file_toy
 
-import scala.language.higherKinds
 import java.nio.file.{Path, Paths}
 import java.io.RandomAccessFile
 

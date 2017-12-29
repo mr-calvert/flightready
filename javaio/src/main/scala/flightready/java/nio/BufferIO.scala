@@ -1,6 +1,5 @@
 package flightready.java.nio
 
-import scala.language.higherKinds
 import java.nio.ByteOrder
 
 import flightready.IsoMutableRORW

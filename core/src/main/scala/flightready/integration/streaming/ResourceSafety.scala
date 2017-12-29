@@ -1,6 +1,5 @@
 package flightready.integration.streaming
 
-import scala.language.higherKinds
 
 /** Captures the bracket primitive common in streaming libraries.
   *

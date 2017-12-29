@@ -1,6 +1,5 @@
 package flightready.java.nio.file
 
-import scala.language.higherKinds
 import java.nio.file.StandardOpenOption
 
 import flightready.integration.effect.Bracket

@@ -5,7 +5,6 @@ import java.nio.channels.{SeekableByteChannel, ReadableByteChannel, WritableByte
 import flightready.IsoMutable
 import flightready.integration.effect.ThunkWrap
 
-import scala.language.higherKinds
 
 object NIOByteChannelReadIO {
   def isoMutable[F[_]](implicit tw: ThunkWrap[F]): IsoMutable[NIOByteChannelReadIO[F], ReadableByteChannel] =
@@ -65,9 +64,9 @@ class NIOSeekableByteChannelReadIO[F[_]](private[nio] val sbc: SeekableByteChann
   private[java] def close: F[Unit] = tw(sbc.close)
 
   def position: F[Long] = tw(sbc.position)
-  def setPosition(pos: Long): F[Unit] = tw(sbc.position(pos))
+  def setPosition(pos: Long): F[Unit] = tw{ sbc.position(pos); () }
   def size: F[Long] = tw(sbc.size)
-  def truncate(size: Long): F[Unit] = tw(sbc.truncate(size))
+  def truncate(size: Long): F[Unit] = tw { sbc.truncate(size); () }
 }
 
 class NIOSeekableByteChannelIO[F[_]](sbc: SeekableByteChannel, tw: ThunkWrap[F])

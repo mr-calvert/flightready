@@ -1,6 +1,5 @@
 package flightready
 
-import scala.language.higherKinds
 import _root_.java.nio.file.Path
 
 trait KV[F[_], K, V] {

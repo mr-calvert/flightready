@@ -1,6 +1,5 @@
 package flightready.java.io
 
-import scala.language.higherKinds
 
 /** Operations upon an opn [[java.io.InputStream]]
   *

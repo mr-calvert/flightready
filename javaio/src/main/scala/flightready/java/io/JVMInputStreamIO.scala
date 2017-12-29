@@ -4,14 +4,13 @@ import java.io.InputStream
 
 import flightready.integration.effect.ThunkWrap
 
-import scala.language.higherKinds
 
 class JVMInputStreamIO[F[_]](is: InputStream, tw: ThunkWrap[F]) extends InputStreamIO[F] {
   private[java] def close: F[Unit] = tw(is.close)
 
   def available: F[Int] = tw(is.available)
 
-  def reset: F[Unit] = tw(reset)
+  def reset: F[Unit] = tw{ reset; () }
 
   def mark(readLimit: Int): F[Unit] = tw(is.mark(readLimit))
   def markSupported: F[Boolean] = tw(is.markSupported)
