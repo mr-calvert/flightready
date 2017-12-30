@@ -10,7 +10,8 @@ import flightready.integration.effect.{PureWrap, Bracket, CatchWrap, ThunkWrap}
 
 object implicits extends Conversions
 
-trait Conversions {
+// TODO: test laws for all these, writing them as needed
+trait Conversions extends LowerPriorityCatchWrap {
   implicit def orderFromOrder[X](implicit ox: frOrder[X]): Order[X] =
     new Order[X] {
       def compare(x: X, y: X): Int = ox.compare(x, y)
@@ -36,15 +37,18 @@ trait Conversions {
     new ThunkWrap[F] {
       def apply[X](x: => X): F[X] = s.delay(x)
     }
+}
 
-  def pureWrapFromApplicative[F[_]](implicit a: Applicative[F]): PureWrap[F] =
+trait LowerPriorityCatchWrap extends LowestPriorityPureWrap {
+  implicit def catchWrapFromApplicativeError[F[_]](implicit ae: ApplicativeError[F, Throwable]): CatchWrap[F] =
+    new CatchWrap[F] {
+      def apply[X](x: => X): F[X] = ae.catchNonFatal(x)
+    }
+}
+
+trait LowestPriorityPureWrap {
+  implicit def pureWrapFromApplicative[F[_]](implicit a: Applicative[F]): PureWrap[F] =
     new PureWrap[F] {
       def apply[X](x: => X): F[X] = a.pure(x)
-    }
-
-  def catchWrapFromApplicativeError[F[_]](implicit me: ApplicativeError[F, Throwable]): CatchWrap[F] =
-    new CatchWrap[F] {
-      def apply[X](f: => X): F[X] =
-        me.pure(f)
     }
 }
