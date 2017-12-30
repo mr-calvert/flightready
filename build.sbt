@@ -47,9 +47,13 @@ lazy val commonOptions = Seq(
   )
 )
 
+lazy val commonTestOptions = Seq(
+  libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.4" % "test"
+)
+
 lazy val core =
   (project in file("core"))
-    .settings(commonOptions)
+    .settings(commonOptions, commonTestOptions)
 
 lazy val catsIntegration =
   (project in file("cats-integration"))
@@ -100,4 +104,4 @@ lazy val javaio =
 lazy val javaioCatsExamples =
   (project in file("javaio-cats-examples"))
     .dependsOn(javaio, catsIntegration)
-    .settings(commonOptions)
+    .settings(commonOptions, commonTestOptions)
