@@ -8,16 +8,16 @@ import flightready.integration.category.{Order, FlatMap}
 import flightready.integration.effect.{PureWrap, ThunkWrap, CatchWrap}
 
 
-object NIOFSPathLogic {
+object JVMFSPathLogic {
   def forDefaultFS[F[_]](tw: ThunkWrap[F], fm: FlatMap[F]): IsoFSPathLogic.Module[F] =
-    NIOFSPathLogic[F](JVMFSPathTypes.default, tw, fm)
+    JVMFSPathLogic[F](JVMFSPathTypes.default, tw, fm)
 
   def apply[F[_]](fsTypes: JVMFSPathTypes, tw: ThunkWrap[F], fm: FlatMap[F]): IsoFSPathLogic.Module[F] =
     new IsoFSPathLogic.Module[F] {
       type FS = fsTypes.FS
       type P = fsTypes.P
 
-      val fsPathLogic: FSPathLogic[F, P] = new NIOFSPathLogic[F, P](fsTypes.fs, tw, fm)
+      val fsPathLogic: FSPathLogic[F, P] = new JVMFSPathLogic[F, P](fsTypes.fs, tw, fm)
       val isoImmutableUnsafe: IsoImmutableUnsafe[fsTypes.P, Path] =
         new IsoImmutableUnsafe[fsTypes.P, Path] {
           def toOpaque(p: Path): fsTypes.P = fsTypes.tag(p)
@@ -45,8 +45,8 @@ object NIOFSPathLogic {
 /** Interprets [[FSPathLogic]] by deference to
   * [[java.nio.file.FileSystem]] and friends. */
 // TODO: introduce a SuspendWrap typeclass, or maybe just require FlatMap
-class NIOFSPathLogic[F[_], P <: Path](val fs: FileSystem, cw: CatchWrap[F], fm: FlatMap[F])
-      extends NIOFSPath[F, P](cw) with FSPathLogic[F, P] {
+class JVMFSPathLogic[F[_], P <: Path](val fs: FileSystem, cw: CatchWrap[F], fm: FlatMap[F])
+      extends JVMFSPath[F, P](cw) with FSPathLogic[F, P] {
 
   def path(p: String): F[P] =
     cw(tag(fs.getPath(p)))
@@ -89,15 +89,15 @@ class NIOFSPathLogic[F[_], P <: Path](val fs: FileSystem, cw: CatchWrap[F], fm: 
 }
 
 
-object NIOFSPath {
-  def forDefaultFS[F[_]](tw: ThunkWrap[F]): IsoFSPath.Module[F] = NIOFSPath[F](JVMFSPathTypes.default, tw)
+object JVMFSPath {
+  def forDefaultFS[F[_]](tw: ThunkWrap[F]): IsoFSPath.Module[F] = JVMFSPath[F](JVMFSPathTypes.default, tw)
 
   def apply[F[_]](fsTypes: JVMFSPathTypes, tw: ThunkWrap[F]): IsoFSPath.Module[F] =
     new IsoFSPath.Module[F] {
       type FS = FileSystem
       type P = fsTypes.P
 
-      val fsPathIO: FSPath[F, fsTypes.P] = new NIOFSPath[F, fsTypes.P](tw)
+      val fsPathIO: FSPath[F, fsTypes.P] = new JVMFSPath[F, fsTypes.P](tw)
       val isoImmutableUnsafe: IsoImmutableUnsafe[fsTypes.P, Path] =
         new IsoImmutableUnsafe[fsTypes.P, Path] {
           def toOpaque(p: Path): fsTypes.P = fsTypes.tag(p)
@@ -106,7 +106,7 @@ object NIOFSPath {
     }
 }
 
-class NIOFSPath[F[_], P <: Path](pw: PureWrap[F]) extends FSPath[F, P] {
+class JVMFSPath[F[_], P <: Path](pw: PureWrap[F]) extends FSPath[F, P] {
   def string(p: P): F[String] = pw(p.toString)
 
   def orderTC: Order[P] =

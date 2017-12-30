@@ -95,7 +95,7 @@ trait NIOFileWriteIOImpl[F[_]] extends FileWriteIO[F, NIOFileIO.Module[F]] {
 
   def writeByteArray(f: P, content: Array[Byte]): F[P] =
     tw(
-      NIOFSPathLogic.tagCheck(f, Files.createFile(f))
+      JVMFSPathLogic.tagCheck(f, Files.createFile(f))
     )
 
 
