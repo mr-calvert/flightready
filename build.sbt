@@ -58,6 +58,15 @@ lazy val catsIntegration =
       commonOptions,
       libraryDependencies += "org.typelevel" %% "cats-effect" % "0.5"
     )
+
+lazy val scalaz70Integration =
+  (project in file("scalaz-7_0-integration"))
+    .dependsOn(core)
+    .settings(
+      commonOptions,
+      libraryDependencies += "org.scalaz" %% "scalaz-concurrent" % "7.0.9"
+    )
+
 lazy val scalaz71Integration =
   (project in file("scalaz-7_1-integration"))
     .dependsOn(core)
