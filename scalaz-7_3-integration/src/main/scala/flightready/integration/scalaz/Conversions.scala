@@ -3,11 +3,11 @@ package flightready.integration.scalaz
 import scala.util.control.NonFatal
 
 import scalaz._
-import Scalaz._
+import scalaz.Scalaz._
 import scalaz.concurrent.Task
 
 import flightready.integration.category.{FlatMap, Order => frOrder}
-import flightready.integration.effect.{ThunkWrap, Bracket, CatchWrap, PureWrap}
+import flightready.integration.effect.{PureWrap, ThunkWrap, Bracket, CatchWrap}
 
 
 object implicits extends Conversions

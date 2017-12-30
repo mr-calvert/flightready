@@ -67,6 +67,14 @@ lazy val scalaz72Integration =
       libraryDependencies += "org.scalaz" %% "scalaz-concurrent" % "7.2.18"
     )
 
+lazy val scalaz73Integration =
+  (project in file("scalaz-7_3-integration"))
+    .dependsOn(core)
+    .settings(
+      commonOptions,
+      libraryDependencies += "org.scalaz" %% "scalaz-concurrent" % "7.3.0-M18"
+    )
+
 
 lazy val javaio =
   (project in file("javaio"))
