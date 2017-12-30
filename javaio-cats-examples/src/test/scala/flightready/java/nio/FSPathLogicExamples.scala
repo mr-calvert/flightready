@@ -2,6 +2,7 @@ package flightready.java.nio
 
 import cats._
 import cats.implicits._
+
 import flightready.java.nio.file.FSPath
 import flightready.test.ExampleCheck
 
@@ -65,5 +66,24 @@ class FSPathLogicExamples extends ExampleCheck {
       } yield ancestorOpt.fold("BROKEN")(pathIso.toImmutable(_).toString)
 
     ancestor.unsafeRunSync shouldBe "foo/bar/baz/bat/gobble/gobble"
+  }
+
+  test("ancestorByNameOption should work when compiled into cats.Id") {
+    import java.nio.file.Paths
+
+    import flightready.java.nio.file.{IsoFSPath, JVMFSPath}
+    import flightready.integration.cats.implicits._
+
+
+    val pathMod: IsoFSPath.Module[Id] = JVMFSPath.forDefaultFS[Id]
+    val pathIso = pathMod.isoImmutableUnsafe
+    implicit val fsPath = pathMod.fsPathIO
+
+    val p = pathIso.toOpaque(Paths.get("up/under/over/around/though"))
+    val name = pathIso.toOpaque(Paths.get("under/over"))
+
+    ancestorByNameOption[Id, pathMod.P](p, name)
+      .map(fsPath.string)
+      .value shouldBe "up/under/over"
   }
 }
