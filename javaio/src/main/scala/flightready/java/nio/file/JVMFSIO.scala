@@ -7,21 +7,21 @@ import flightready.integration.effect.ThunkWrap
 import flightready.java.nio._
 
 
-object NIOFSIO {
+object JVMFSIO {
   class Module[F[_]] extends FSIO.Module[F] {
-    def fsIO: FSIO[F, NIOFSIO.Module[F]] = ???
+    def fsIO: FSIO[F, JVMFSIO.Module[F]] = ???
 
     type P = JVMFSPathTypes#P
 
-    type ByteBufferIOMod = NIOByteBufferModule[F]
+    type ByteBufferIOMod = JVMByteBufferModule[F]
     def byteBufferModule: ByteBufferIOMod = ???
   }
 }
 
-class NIOFSIO[F[_]](val tw: ThunkWrap[F])
-      extends NIOFSReadIO[F](tw) with FSIO[F, NIOFSIO.Module[F]] with NIOFSWriteIOImpl[F] {
+class JVMFSIO[F[_]](val tw: ThunkWrap[F])
+      extends JVMFSReadIO[F](tw) with FSIO[F, JVMFSIO.Module[F]] with JVMFSWriteIOImpl[F] {
 
-  override type P = NIOFSIO.Module[F]#P
+  override type P = JVMFSIO.Module[F]#P
 
   def copy(src: P, dst: P, options: CopyOption*): F[P] =
     tw(
@@ -34,8 +34,8 @@ class NIOFSIO[F[_]](val tw: ThunkWrap[F])
     )
 }
 
-class NIOFSReadIO[F[_]](tw: ThunkWrap[F]) extends FSReadIO[F, NIOFSIO.Module[F]] {
-  type P = NIOFSIO.Module[F]#P
+class JVMFSReadIO[F[_]](tw: ThunkWrap[F]) extends FSReadIO[F, JVMFSIO.Module[F]] {
+  type P = JVMFSIO.Module[F]#P
 
   def realPath(p: P, followLinks: Boolean): F[P] =
     tw(
@@ -88,8 +88,8 @@ class NIOFSReadIO[F[_]](tw: ThunkWrap[F]) extends FSReadIO[F, NIOFSIO.Module[F]]
     else List(LinkOption.NOFOLLOW_LINKS)
 }
 
-trait NIOFSWriteIOImpl[F[_]] extends FSWriteIO[F, NIOFSIO.Module[F]] {
-  type P = NIOFSIO.Module[F]#P
+trait JVMFSWriteIOImpl[F[_]] extends FSWriteIO[F, JVMFSIO.Module[F]] {
+  type P = JVMFSIO.Module[F]#P
 
   def tw: ThunkWrap[F]
 
@@ -124,4 +124,4 @@ trait NIOFSWriteIOImpl[F[_]] extends FSWriteIO[F, NIOFSIO.Module[F]] {
 
 }
 
-class NIOFSWriteIO[F[_]](val tw: ThunkWrap[F]) extends NIOFSWriteIOImpl[F]
+class JVMFSWriteIO[F[_]](val tw: ThunkWrap[F]) extends JVMFSWriteIOImpl[F]

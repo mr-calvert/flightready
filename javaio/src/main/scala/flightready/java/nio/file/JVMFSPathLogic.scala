@@ -29,7 +29,7 @@ object JVMFSPathLogic {
   // TODO: test that the filesystem equality check is something like functional
   /** Not exactly typesafe hack to retag raw [[Path]] instances.
     *
-    * [[NIOFSIO]] has some operations that create new `Path`
+    * [[JVMFSIO]] has some operations that create new `Path`
     * instances but doesn't have access to the tag method used here.
     * Only operations expected to produce a Path in the same
     * filesystem as its `in` parameter should use this hack. Out of
