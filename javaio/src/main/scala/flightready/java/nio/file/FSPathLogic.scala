@@ -42,6 +42,13 @@ object FSPathLogic {
     def fsPathLogic: FSPathLogic[F, P]
   }
 
+  // TODO: move FSPath above FSPathLogic
+
+  // TODO: add a function to return a Module in a different F
+
+  // TODO: provide a convenience type for the actual IO types fully
+  // populated and update the example to use it
+
   case object NoParent extends Exception
   case object NoFilename extends Exception
 }
