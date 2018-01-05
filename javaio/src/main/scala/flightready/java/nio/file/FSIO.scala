@@ -48,53 +48,21 @@ trait FSReadIO[F[_], Mod <: FSIO.Module[F]] {
 
   def size(p: Mod#P): F[Long]
 
-  // TODO: wrap FileTime so as to hide all Java types from interfaces... we'd like to play nice with non java environments
-  def lastModifiedTime(p: Mod#P, followLinks: Boolean): F[FileTime]
-
   // TODO: document the assumption that links never change filsystems
   def readSymbolicLink(p: Mod#P): F[Mod#P]
 
-  // TODO: getOwner... got to figure out to wrap the whole `Principle` thing
-
-  // TODO: getAttribute.. man this thing is wierd, not sure at all what the in and out encodings are
-
-  // TODO: getFileAttributeView... this looks usefulish, like we could wrap it into something non horrible
-
-  // TODO: getPosixFilePermissions... figure out how to wrap PosixFilePermissions
-
-  // TODO: readAttributes... yeah...??
-
-  // TODO: newDirectoryStream... once created it's just an iterator, this can be a first draft of a streaming approach
-
-  // TODO: walkFileTree... the $64,000,000 question is if it's possible to do an FP wrapping of a visitor... yes if your require an "Unsafe" typeclass for the effect type and return Unit... harder if you want to model building a return value because that value then HAS to be mutable
-
   def probeContentType(p: Mod#P): F[String] // TODO: can we return something smarter than a String?
-
-
-
-  // TODO: getFileStore... a naked FileStore is a bad thing so it too needs to be wrapped, question is do we make it opaque and provide an algebra or do we inject a FileStore algebra inside? Or both
 }
 
 trait FSWriteIO[F[_], Mod <: FSIO.Module[F]] {
-  def createDirectories(p: Mod#P): F[Mod#P] // TODO: add FileAttribute parameter
-  def createDirectory(p: Mod#P): F[Mod#P] // TODO: add FileAttribute parameter
-  def createFile(f: Mod#P): F[Mod#P] // TODO: add FileAttribute parameter
+  def createDirectories(p: Mod#P): F[Mod#P]
+  def createDirectory(p: Mod#P): F[Mod#P]
+  def createFile(f: Mod#P): F[Mod#P]
   def createLink(link: Mod#P, existing: Mod#P): F[Mod#P]
-  def createSymbolicLink(link: Mod#P, target: Mod#P): F[Mod#P] // TODO: add FileAttributes parameter
-
-  // TODO: createTempDirectory methods
-  // TODO: createTempFile methods
+  def createSymbolicLink(link: Mod#P, target: Mod#P): F[Mod#P]
 
   def delete(p: Mod#P): F[Unit]
   def deleteIfExists(p: Mod#P): F[Boolean]
-
-  // TODO: setAttribute... straightforward, but man the native types here scream for help
-
-  // TODO: setLastModifiedTime... straightfoward IF we decide we're ok enshrining FileTime
-
-  // TODO: setOwner... oh man... more UserPrinciple scariness
-
-  // TODO: setPosixFilePermissions... depends on PosixFilePermissions
 }
 
 
