@@ -25,8 +25,6 @@ object JVMFSPathLogic {
         }
     }
 
-  // TODO: make a real exception
-  // TODO: test that the filesystem equality check is something like functional
   /** Not exactly typesafe hack to retag raw [[Path]] instances.
     *
     * [[JVMFSIO]] has some operations that create new `Path`

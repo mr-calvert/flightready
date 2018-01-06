@@ -69,7 +69,6 @@ object IsoFSPathLogic {
 }
 
 // TODO: add links to relevant methods on FileSystem and Path
-// TODO: define laws for [[FSPathLogic]] by reading docs
 /** Manipulates Strings and paths in the context of a specific file
   * system's path semantics.
   *

@@ -12,7 +12,6 @@ import flightready.integration.effect.{ThunkWrap, Bracket, CatchWrap, PureWrap}
 
 object implicits extends Conversions
 
-// TODO: test laws for all these, writing them as needed
 trait Conversions extends LowerPriorityCatchWrap {
   implicit def orderFromOrder[X](implicit ox: frOrder[X]): Order[X] =
     new Order[X] {

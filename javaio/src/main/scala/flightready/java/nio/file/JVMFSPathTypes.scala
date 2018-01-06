@@ -20,7 +20,6 @@ object JVMFSPathTypes {
   val default = new JVMFSPathTypes(FileSystems.getDefault)
 }
 
-// TODO: test failure to compile when mixing Ps between IO instances
 /** Wraps a [[FileSystem]] instance and declares a `P` with a
   * dependently typed tag to prevent [[Path]]s from different file
   * systems from being used with the wrong IO instance. */

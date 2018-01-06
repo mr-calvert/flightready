@@ -206,9 +206,9 @@ class JVMCharBufferReadIO[F[_]](private[nio] val buf: CharBuffer, val tw: ThunkW
       case nio: JVMCharBufferIO[F] => tw(buf.read(nio.buf))
       case dst: CharBufferIO[F] =>
         if (dst.hasArray)
-          tw { throw new Exception("not implemented yet") } // TODO: figure out read's real behavior and emulate it
+          tw { throw new Exception("not implemented yet") }
         else
-          tw { throw new Exception("not implemented yet") } // TODO: figure out read's real behavior and emulate it
+          tw { throw new Exception("not implemented yet") }
     }
 }
 

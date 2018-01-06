@@ -28,9 +28,6 @@ package flightready.java.io
   * better the higher level ones. When I get around to writing them
   * that is.
   */
-// TODO: document FlightReady's policies regarding purity: 1) only provide pure tools, 2) only provide immutable or opaquely wrapped types at algebra surfaces EXCEPT, 3) provide provocatively named to/from conversion tools as module peers for "edge of world" conversion of types that constitute lingua franka for Java IO
-// TODO: perform effectful wrapping of primative arrays and move this interface to use it
-// TODO: doc comments with a short intro and a link back to live docs on each method, cause the semantics aren't always straightforward
 trait InputStreamIO[F[_]] {
   def available: F[Int]
 

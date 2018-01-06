@@ -29,14 +29,7 @@ trait FileIO[F[_], Mod <: FileIO.Module[F]] extends FileReadIO[F, Mod] with File
 }
 
 trait FileReadIO[F[_], Mod <: FileIO.Module[F]] {
-  // TODO: Something less mutable than an Array??
   def readAllBytes(p: Mod#P): F[Array[Byte]]
-
-  // TODO: encode CharSet without being horrible
-  // TODO: figure out the least horrible way to pass on a java list of strings and replace that Nothing
-  //  def readAllLines(p: Mod#P): F[Nothing]
-
-  // TODO: newBufferedReader... algebra open buffered reader algebra executor and stream interface, needs a smart way of expressing CharSet, should also support byte streaming
 
   // TODO: add OpenOptions parameter
   def onInputStreamF[X](p: Mod#P)(run: InputStreamIO[F] => F[X])(implicit brkt: Bracket[F]): F[X]
@@ -55,12 +48,6 @@ trait FileReadIO[F[_], Mod <: FileIO.Module[F]] {
 
 trait FileWriteIO[F[_], Mod <: FileIO.Module[F]] {
   def writeByteArray(p: Mod#P, content: Array[Byte]): F[Mod#P] // TODO: add OpenOptions parameter
-
-  // TODO: writeLines... there might be some quick wins here for non-offensive collections being fed in here
-
-  // TODO: newBufferedWriter... be able to feed it either a naked Writer program or a PrintWriter program
-
-  // TODO: newOutputStream... needs a nice little
 
   // TODO: taunt anybody who wants to use size or truncate in append mode and tell them to PR it
   def onByteChannelAppendF[X](p: Mod#P, openOptions: OpenAppendOption*)

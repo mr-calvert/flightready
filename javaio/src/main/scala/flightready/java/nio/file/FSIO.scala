@@ -1,7 +1,5 @@
 package flightready.java.nio.file
 
-import java.nio.file.attribute.FileTime
-
 object FSIO {
   trait Module[F[_]] {
     def fsIO: FSIO[F, _ <: FSIO.Module[F]]
@@ -20,8 +18,6 @@ trait FSIO[F[_], Mod <: FSIO.Module[F]] extends FSReadIO[F, Mod] with FSWriteIO[
 
 // TOOD; doc comments including links back to original method documentation
 trait FSReadIO[F[_], Mod <: FSIO.Module[F]] {
-  // TODO: figure out watch services, how to wrap
-
   def realPath(p: Mod#P, followLinks: Boolean): F[Mod#P]
 
   def absolutePath(p: Mod#P): F[Mod#P]
