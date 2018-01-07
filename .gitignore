@@ -1,5 +1,4 @@
 .idea/**
 project/**
 target/**
-core/target/**
-javaio/target/**
+*/target/**
