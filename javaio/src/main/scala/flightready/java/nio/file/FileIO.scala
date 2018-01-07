@@ -2,10 +2,11 @@ package flightready.java.nio.file
 
 import java.nio.file.StandardOpenOption
 
+import flightready.integration.collection.JListFoldable
 import flightready.integration.effect.Bracket
 import flightready.integration.streaming.ResourceSafety
 import flightready.java.io.InputStreamIO
-import flightready.java.nio.{ByteBufferIO, SeekableByteChannelIO, SeekableByteChannelReadIO, ByteChannelWriteIO}
+import flightready.java.nio.{ByteBufferIO, ByteChannelWriteIO, SeekableByteChannelIO, SeekableByteChannelReadIO}
 
 object FileIO {
   trait Module[F[_]] {
@@ -15,6 +16,8 @@ object FileIO {
 
     type ByteBufferIOMod <: ByteBufferIO.Module[F]
     def byteBufferModule: ByteBufferIOMod
+
+    type CS
   }
 }
 
@@ -30,6 +33,7 @@ trait FileIO[F[_], Mod <: FileIO.Module[F]] extends FileReadIO[F, Mod] with File
 
 trait FileReadIO[F[_], Mod <: FileIO.Module[F]] {
   def readAllBytes(p: Mod#P): F[Array[Byte]]
+  def readAllLines(p: Mod#P, cs: Mod#CS): F[JListFoldable[String]]
 
   // TODO: add OpenOptions parameter
   def onInputStreamF[X](p: Mod#P)(run: InputStreamIO[F] => F[X])(implicit brkt: Bracket[F]): F[X]

@@ -2,16 +2,20 @@ package flightready.java.nio.file
 
 import java.nio.file.{StandardOpenOption, Files}
 
+import flightready.integration.collection.JListFoldable
 import flightready.integration.effect.{ThunkWrap, Bracket}
 import flightready.integration.streaming.ResourceSafety
-import flightready.java.io.{JVMInputStreamIO, InputStreamIO}
+import flightready.java.io.{InputStreamIO, JVMInputStreamIO}
 import flightready.java.nio._
+import flightready.java.nio.charset.JVMRequiredCharsetIO
 
 object JVMFileIO {
   class Module[F[_]] extends FileIO.Module[F] {
     def fileIO: FileIO[F, JVMFileIO.Module[F]] = ???
 
     type P = JVMFSPathTypes#P
+
+    type CS = JVMRequiredCharsetIO[F]
 
     type ByteBufferIOMod = JVMByteBufferModule[F]
     def byteBufferModule: ByteBufferIOMod = ???
@@ -51,6 +55,7 @@ class JVMFileReadIO[F[_]](tw: ThunkWrap[F]) extends FileReadIO[F, JVMFileIO.Modu
   type P = JVMFSIO.Module[F]#P
 
   def readAllBytes(p: P): F[Array[Byte]] = tw(Files.readAllBytes(p))
+  def readAllLines(p: P, cs: JVMRequiredCharsetIO[F]): F[JListFoldable[String]] = ???
 
   def onInputStreamF[X](p: P)(run: InputStreamIO[F] => F[X])(implicit brkt: Bracket[F]): F[X] =
     brkt.bracket(newInputStream(p))(_.close)(run)
