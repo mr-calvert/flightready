@@ -8,7 +8,7 @@ import flightready.integration.category.{FlatMap => frFlatMap, Order => frOrder}
 import flightready.integration.effect.{PureWrap, Bracket, CatchWrap, ThunkWrap}
 
 
-object implicits extends Conversions
+object implicits extends Conversions with Foldable
 
 trait Conversions extends LowerPriorityCatchWrap {
   implicit def orderFromOrder[X](implicit ox: frOrder[X]): Order[X] =
