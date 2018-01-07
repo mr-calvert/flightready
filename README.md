@@ -1,4 +1,6 @@
 # flightready
+[![Build Status](https://travis-ci.org/mr-calvert/flightready.svg?branch=master)](https://travis-ci.org/mr-calvert/flightready)
+
 Finally tagless/Free integrations; stdio for FP Scala!
 
 A real introduction is pending.
