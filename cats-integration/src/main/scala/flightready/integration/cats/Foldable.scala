@@ -3,27 +3,24 @@ package flightready.integration.cats
 import cats.Eval
 import flightready.integration.collection.{HiddenIterable, HiddenRandomAccess}
 
-trait Foldable extends LowerPriorityFoldable {
+trait Foldable extends LowerPriorityRandomAccessFoldable {
   implicit def iterableFoldable[F[X] <: HiddenIterable[X]]: cats.Foldable[F] =
     new IterableFoldableImpl[F] {}
 }
 
-trait LowerPriorityFoldable extends LowestPriorityPureWrap {
+trait LowerPriorityRandomAccessFoldable extends LowestPriorityRandomAccessIterableFoldable {
   implicit def randomAccessFoldable[F[X] <: HiddenRandomAccess[X]]: cats.Foldable[F] =
     new RandomAccessFoldableImpl[F] {}
 }
 
-trait LowestPriorityFoldable {
+trait LowestPriorityRandomAccessIterableFoldable {
   implicit def randomAccessIterableFoldable[F[X] <: HiddenIterable[X] with HiddenRandomAccess[X]]: cats.Foldable[F] =
     new FoldableFromRandomAccessIterable[F]
 }
 
 trait IterableFoldableImpl[F[X] <: HiddenIterable[X]] extends cats.Foldable[F] {
-  def foldLeft[A, B](fa: F[A], b: B)(f: (B, A) => B): B = {
-    var bb = b
-    for (a <- fa.iterator) bb = f(bb, a)
-    bb
-  }
+  def foldLeft[A, B](fa: F[A], b: B)(f: (B, A) => B): B =
+    fa.iterator.foldLeft(b)(f)
 
   def foldRight[A, B](fa: F[A],lb: Eval[B])(f: (A, Eval[B]) => Eval[B]): Eval[B] = {
     def go(ia: Iterator[A]): Eval[B] =
