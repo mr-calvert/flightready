@@ -60,7 +60,11 @@ lazy val catsIntegration =
     .dependsOn(core % "compile->compile;test->test")
     .settings(
       commonOptions,
-      libraryDependencies += "org.typelevel" %% "cats-effect" % "0.5"
+      libraryDependencies ++= Seq(
+        "org.typelevel" %% "cats-effect" % "0.5",
+        "org.typelevel" %% "cats-laws" % "1.0.0-RC1" % "test",
+        "org.typelevel" %% "cats-testkit" % "1.0.0-RC1" % "test"
+      )
     )
 
 lazy val scalaz70Integration =
