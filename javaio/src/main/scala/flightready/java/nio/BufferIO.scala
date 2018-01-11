@@ -6,9 +6,9 @@ import flightready.IsoMutableRORW
 import flightready.integration.category.FlatMap
 
 trait BufferReadIO[F[_], A] {
-  def capacity: Int // TODO: comment why not functor wrapped (fixed property of this instance of the wrapped buffer)
+  def capacity: F[Int]
 
-  def isDirect: F[Boolean] // TODO: comment WHY functor wrapped (not previously known property of the wrapped buffer)
+  def isDirect: F[Boolean]
   def order: F[ByteOrder]
 
   def limit: F[Int]
@@ -31,10 +31,10 @@ trait BufferReadIO[F[_], A] {
   def getIntoSlice(dst: Array[A], ofs: Int, len: Int): F[Unit]
 }
 
-trait BufferIO[F[_], A] {
-  def hasArray: Boolean
-  def array: Array[A]
-  def arrayOffset: Int
+trait BufferIO[F[_], A] extends BufferReadIO[F, A] {
+  def hasArray: F[Boolean]
+  def array: F[Array[A]]
+  def arrayOffset: F[Int]
 
   def compact: F[Unit]
 

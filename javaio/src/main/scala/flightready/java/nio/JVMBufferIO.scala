@@ -15,7 +15,7 @@ trait BufferAndWrap[F[_]] {
 
 trait JVMBufferReadIO[F[_], A] extends BufferReadIO[F, A] { self: BufferAndWrap[F] =>
   def isDirect: F[Boolean] = tw(buf.isDirect)
-  def capacity: Int = buf.capacity
+  def capacity: F[Int] = tw(buf.capacity)
 
   def limit: F[Int] = tw(buf.limit)
   def mark: F[Unit] = tw { buf.mark; () }
@@ -33,8 +33,8 @@ trait JVMBufferReadIO[F[_], A] extends BufferReadIO[F, A] { self: BufferAndWrap[
 }
 
 trait JVMBufferIO[F[_], A] extends BufferIO[F, A] { self: BufferAndWrap[F] =>
-  def hasArray: Boolean = buf.hasArray
-  def arrayOffset: Int = buf.arrayOffset
+  def hasArray: F[Boolean] = tw(buf.hasArray)
+  def arrayOffset: F[Int] = tw(buf.arrayOffset)
 }
 
 object JVMByteBufferModule {
@@ -122,7 +122,7 @@ class JVMByteBufferIO[F[_]](buf: ByteBuffer, tw: ThunkWrap[F])
   def asFloatBufferRW: F[FloatBufferIO[F]] = tw(new JVMFloatBufferIO[F](buf.asFloatBuffer, tw))
   def asDoubleBufferRW: F[DoubleBufferIO[F]] = tw(new JVMDoubleBufferIO[F](buf.asDoubleBuffer, tw))
 
-  def array: Array[Byte] = buf.array
+  def array: F[Array[Byte]] = tw(buf.array)
   def compact: F[Unit] = tw { buf.compact; () }
 
   def put(f: Byte): F[Unit] = tw { buf.put(f); () }
@@ -204,11 +204,12 @@ class JVMCharBufferReadIO[F[_]](private[nio] val buf: CharBuffer, val tw: ThunkW
   def read(dst: CharBufferIO[F])(implicit fm: FlatMap[F]): F[Int] =
     dst match {
       case nio: JVMCharBufferIO[F] => tw(buf.read(nio.buf))
-      case dst: CharBufferIO[F] =>
-        if (dst.hasArray)
-          tw { throw new Exception("not implemented yet") }
-        else
-          tw { throw new Exception("not implemented yet") }
+      case _: CharBufferIO[F] =>
+        tw { throw new Exception("not implemented yet") }
+//        if (dst.hasArray)
+//          tw { throw new Exception("not implemented yet") }
+//        else
+//          tw { throw new Exception("not implemented yet") }
     }
 }
 
@@ -225,7 +226,7 @@ class JVMCharBufferIO[F[_]](buf: CharBuffer, tw: ThunkWrap[F])
   def subSequenceRW(start: Int, end: Int): F[CharBufferIO[F]] =
     tw(new JVMCharBufferIO[F](buf.subSequence(start, end), tw))
 
-  def array: Array[Char] = buf.array
+  def array: F[Array[Char]] = tw(buf.array)
 
   def compact: F[Unit] = tw { buf.compact; () }
 
@@ -295,7 +296,7 @@ class JVMShortBufferIO[F[_]](buf: ShortBuffer, tw: ThunkWrap[F])
   def duplicateRW: F[ShortBufferIO[F]] = tw(new JVMShortBufferIO(buf.duplicate, tw))
   def sliceRW: F[ShortBufferIO[F]] = tw(new JVMShortBufferIO(buf.slice, tw))
 
-  def array: Array[Short] = buf.array
+  def array: F[Array[Short]] = tw(buf.array)
 
   def compact: F[Unit] = tw { buf.compact; () }
 
@@ -358,7 +359,7 @@ class JVMIntBufferReadIO[F[_]](private[nio] val buf: IntBuffer, val tw: ThunkWra
 class JVMIntBufferIO[F[_]](buf: IntBuffer, tw: ThunkWrap[F])
       extends JVMIntBufferReadIO[F](buf, tw) with JVMBufferIO[F, Int] with IntBufferIO[F] {
 
-  def array: Array[Int] = buf.array
+  def array: F[Array[Int]] = tw(buf.array)
 
   override def duplicateRO: F[IntBufferReadIO[F]] = tw(new JVMIntBufferReadIO(buf.asReadOnlyBuffer, tw))
   override def sliceRO: F[IntBufferReadIO[F]] = tw(new JVMIntBufferReadIO(buf.asReadOnlyBuffer.slice, tw))
@@ -427,7 +428,7 @@ class JVMLongBufferReadIO[F[_]](private[nio] val buf: LongBuffer, val tw: ThunkW
 class JVMLongBufferIO[F[_]](buf: LongBuffer, tw: ThunkWrap[F])
   extends JVMLongBufferReadIO[F](buf, tw) with JVMBufferIO[F, Long] with LongBufferIO[F] {
 
-  def array: Array[Long] = buf.array
+  def array: F[Array[Long]] = tw(buf.array)
 
   override def duplicateRO: F[LongBufferReadIO[F]] = tw(new JVMLongBufferReadIO(buf.asReadOnlyBuffer, tw))
   override def sliceRO: F[LongBufferReadIO[F]] = tw(new JVMLongBufferReadIO(buf.asReadOnlyBuffer.slice, tw))
@@ -496,7 +497,7 @@ class JVMFloatBufferReadIO[F[_]](private[nio] val buf: FloatBuffer, val tw: Thun
 class JVMFloatBufferIO[F[_]](buf: FloatBuffer, tw: ThunkWrap[F])
       extends JVMFloatBufferReadIO[F](buf, tw) with JVMBufferIO[F, Float] with FloatBufferIO[F] {
 
-  def array: Array[Float] = buf.array
+  def array: F[Array[Float]] = tw(buf.array)
 
   override def duplicateRO: F[FloatBufferReadIO[F]] = tw(new JVMFloatBufferReadIO(buf.asReadOnlyBuffer, tw))
   override def sliceRO: F[FloatBufferReadIO[F]] = tw(new JVMFloatBufferReadIO(buf.asReadOnlyBuffer.slice, tw))
@@ -565,7 +566,7 @@ class JVMDoubleBufferReadIO[F[_]](private[nio] val buf: DoubleBuffer, val tw: Th
 class JVMDoubleBufferIO[F[_]](buf: DoubleBuffer, tw: ThunkWrap[F])
     extends JVMDoubleBufferReadIO[F](buf, tw) with JVMBufferIO[F, Double] with DoubleBufferIO[F] {
 
-  def array: Array[Double] = buf.array
+  def array: F[Array[Double]] = tw(buf.array)
 
   override def duplicateRO: F[DoubleBufferReadIO[F]] = tw(new JVMDoubleBufferReadIO(buf.asReadOnlyBuffer, tw))
   override def sliceRO: F[DoubleBufferReadIO[F]] = tw(new JVMDoubleBufferReadIO(buf.asReadOnlyBuffer.slice, tw))
