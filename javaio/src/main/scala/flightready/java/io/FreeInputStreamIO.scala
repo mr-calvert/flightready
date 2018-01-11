@@ -1,9 +1,9 @@
 package flightready.java.io
 
-import flightready.{Term, Lift}
+import flightready.{Lift, Term1}
 
 
-sealed trait InputStreamF[A] extends Term[InputStreamIO, A]
+sealed trait InputStreamF[A] extends Term1[InputStreamIO, A]
 
 object InputStreamF {
   case object Available extends InputStreamF[Int] { def select[F[_]](io: InputStreamIO[F]): F[Int] = io.available }
