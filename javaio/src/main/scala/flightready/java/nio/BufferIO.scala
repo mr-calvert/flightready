@@ -74,7 +74,7 @@ trait ByteBufferReadIO[F[_]] extends BufferReadIO[F, Byte] {
   def asDoubleBufferRO: F[DoubleBufferReadIO[F]]
 }
 
-trait ByteBufferIO[F[_]] extends BufferIO[F, Byte] {
+trait ByteBufferIO[F[_]] extends BufferIO[F, Byte] with ByteBufferReadIO[F] {
   def duplicateRW: F[ByteBufferIO[F]]
   def sliceRW: F[ByteBufferIO[F]]
 
@@ -134,7 +134,7 @@ trait CharBufferReadIO[F[_]] extends BufferReadIO[F, Char] {
 }
 
 // eliding the "append" methods because their reliance on csq.toString is just comically terrible
-trait CharBufferIO[F[_]] extends BufferIO[F, Char] {
+trait CharBufferIO[F[_]] extends BufferIO[F, Char] with CharBufferReadIO[F] {
   def duplicateRW: F[CharBufferIO[F]]
   def sliceRW: F[CharBufferIO[F]]
 
@@ -167,7 +167,7 @@ trait ShortBufferReadIO[F[_]] extends BufferReadIO[F, Short] {
   def duplicateRO: F[ShortBufferReadIO[F]]
   def sliceRO: F[ShortBufferReadIO[F]]
 }
-trait ShortBufferIO[F[_]] extends BufferIO[F, Short] {
+trait ShortBufferIO[F[_]] extends BufferIO[F, Short] with ShortBufferReadIO[F] {
   def duplicateRW: F[ShortBufferIO[F]]
   def sliceRW: F[ShortBufferIO[F]]
 
@@ -196,7 +196,7 @@ trait IntBufferReadIO[F[_]] extends BufferReadIO[F,  Int] {
   def duplicateRO: F[IntBufferReadIO[F]]
   def sliceRO: F[IntBufferReadIO[F]]
 }
-trait IntBufferIO[F[_]] extends BufferIO[F, Int] {
+trait IntBufferIO[F[_]] extends BufferIO[F, Int] with IntBufferReadIO[F] {
   def duplicateRW: F[IntBufferIO[F]]
   def sliceRW: F[IntBufferIO[F]]
 
@@ -225,7 +225,7 @@ trait LongBufferReadIO[F[_]] extends BufferReadIO[F, Long] {
   def duplicateRO: F[LongBufferReadIO[F]]
   def sliceRO: F[LongBufferReadIO[F]]
 }
-trait LongBufferIO[F[_]] extends BufferIO[F, Long] {
+trait LongBufferIO[F[_]] extends BufferIO[F, Long] with LongBufferReadIO[F] {
   def duplicateRW: F[LongBufferIO[F]]
   def sliceRW: F[LongBufferIO[F]]
 
@@ -254,7 +254,7 @@ trait FloatBufferReadIO[F[_]] extends BufferReadIO[F, Float] {
   def duplicateRO: F[FloatBufferReadIO[F]]
   def sliceRO: F[FloatBufferReadIO[F]]
 }
-trait FloatBufferIO[F[_]] extends FloatBufferReadIO[F] with BufferIO[F, Float] {
+trait FloatBufferIO[F[_]] extends BufferIO[F, Float] with FloatBufferReadIO[F] {
   def duplicateRW: F[FloatBufferIO[F]]
   def sliceRW: F[FloatBufferIO[F]]
 
@@ -283,7 +283,6 @@ trait DoubleBufferReadIO[F[_]] extends BufferReadIO[F, Double] {
   def duplicateRO: F[DoubleBufferReadIO[F]]
   def sliceRO: F[DoubleBufferReadIO[F]]
 }
-
 trait DoubleBufferIO[F[_]] extends DoubleBufferReadIO[F] with BufferIO[F, Double] {
   def duplicateRW: F[DoubleBufferIO[F]]
   def sliceRW: F[DoubleBufferIO[F]]
