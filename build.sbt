@@ -1,6 +1,6 @@
 lazy val commonOptions = Seq(
   version := "1.0",
-  scalaVersion := "2.12.4",
+  scalaVersion in ThisBuild := "2.12.4",
   scalacOptions ++= Seq(
     "-Ypartial-unification",
     "-deprecation",

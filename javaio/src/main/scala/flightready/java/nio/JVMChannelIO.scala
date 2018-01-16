@@ -19,7 +19,7 @@ class JVMByteChannelReadIO[F[_]](private[nio] val rbc: ReadableByteChannel, tw: 
       extends ByteChannelReadIO[F, JVMByteBufferModule[F]] {
 
   def read(bbioOut: JVMByteBufferModule[F]#IORW): F[Int] =
-    tw(rbc.read(JVMByteBufferModule[F](tw).isoMutableRORW.toMutable(bbioOut)))
+    tw(rbc.read(JVMByteBufferIO[F](tw).isoMutableRORW.toMutable(bbioOut)))
 }
 
 
@@ -38,7 +38,7 @@ class JVMByteChannelWriteIO[F[_]](private[nio] val wbc: WritableByteChannel, tw:
   private[java] def close: F[Unit] = tw(wbc.close)
 
   def write(bbioIn: JVMByteBufferModule[F]#IORO): F[Int] =
-    tw(wbc.write(JVMByteBufferModule[F](tw).isoMutableRORW.toMutable(bbioIn)))
+    tw(wbc.write(JVMByteBufferIO[F](tw).isoMutableRORW.toMutable(bbioIn)))
 }
 
 

@@ -3,7 +3,6 @@ package flightready.java.nio
 import java.nio.ByteOrder
 
 import flightready.IsoMutableRORW
-import flightready.integration.category.FlatMap
 
 trait BufferReadIO[F[_], A] {
   def capacity: F[Int]
@@ -44,11 +43,30 @@ trait BufferIO[F[_], A] extends BufferReadIO[F, A] {
   def putArraySlice(as: Array[A], ofs: Int, len: Int): F[Unit]
 }
 
+object BufferIO {
+  trait Module[F[_]] {
+    type ByteBufMod <: ByteBufferIO.Module[F]
+    type CharBufMod <: CharBufferIO.Module[F]
+    type ShortBufMod <: ShortBufferIO.Module[F]
+    type IntBufMod <: IntBufferIO.Module[F]
+    type LongBufMod <: LongBufferIO.Module[F]
+    type FloatBufMod <: FloatBufferIO.Module[F]
+    type DoubleBufMod <: DoubleBufferIO.Module[F]
+
+    def byteBufferModule: ByteBufMod
+    def charBufferModule: CharBufMod
+    def shortBufferModule: ShortBufMod
+    def intBufferModule: IntBufMod
+    def longBufferModule: LongBufMod
+    def floatBufferModule: FloatBufMod
+    def doubleBufferModule: DoubleBufMod
+  }
+}
 
 object ByteBufferIO {
   trait Module[F[_]] {
-    type IORO <: ByteBufferReadIO[F]
-    type IORW <: ByteBufferIO[F]
+    type IORO <: ByteBufferReadIO[F, _ <: BufferIO.Module[F]]
+    type IORW <: ByteBufferIO[F, _ <: BufferIO.Module[F]]
 
     def allocate(capacity: Int): F[IORW]
     def allocateDirect(capacity: Int): F[IORW]
@@ -62,32 +80,32 @@ object IsoByteBufferIO {
   }
 }
 
-trait ByteBufferReadIO[F[_]] extends BufferReadIO[F, Byte] {
-  def duplicateRO: F[ByteBufferReadIO[F]]
-  def sliceRO: F[ByteBufferReadIO[F]]
+trait ByteBufferReadIO[F[_], BufMod <: BufferIO.Module[F]] extends BufferReadIO[F, Byte] {
+  def duplicateRO: F[BufMod#ByteBufMod#IORO]
+  def sliceRO: F[BufMod#ByteBufMod#IORO]
 
-  def asCharBufferRO: F[CharBufferReadIO[F]]
-  def asShortBufferRO: F[ShortBufferReadIO[F]]
-  def asIntBufferRO: F[IntBufferReadIO[F]]
-  def asLongBufferRO: F[LongBufferReadIO[F]]
-  def asFloatBufferRO: F[FloatBufferReadIO[F]]
-  def asDoubleBufferRO: F[DoubleBufferReadIO[F]]
+  def asCharBufferRO: F[BufMod#CharBufMod#IORO]
+  def asShortBufferRO: F[BufMod#ShortBufMod#IORO]
+  def asIntBufferRO: F[BufMod#IntBufMod#IORO]
+  def asLongBufferRO: F[BufMod#LongBufMod#IORO]
+  def asFloatBufferRO: F[BufMod#FloatBufMod#IORO]
+  def asDoubleBufferRO: F[BufMod#DoubleBufMod#IORO]
 }
 
-trait ByteBufferIO[F[_]] extends BufferIO[F, Byte] with ByteBufferReadIO[F] {
-  def duplicateRW: F[ByteBufferIO[F]]
-  def sliceRW: F[ByteBufferIO[F]]
+trait ByteBufferIO[F[_], BufMod <: BufferIO.Module[F]] extends BufferIO[F, Byte] with ByteBufferReadIO[F, BufMod] {
+  def duplicateRW: F[BufMod#ByteBufMod#IORW]
+  def sliceRW: F[BufMod#ByteBufMod#IORW]
 
   def setByteOrder(bo: ByteOrder): F[Unit]
 
-  def asCharBufferRW: F[CharBufferIO[F]]
-  def asShortBufferRW: F[ShortBufferIO[F]]
-  def asIntBufferRW: F[IntBufferIO[F]]
-  def asLongBufferRW: F[LongBufferIO[F]]
-  def asFloatBufferRW: F[FloatBufferIO[F]]
-  def asDoubleBufferRW: F[DoubleBufferIO[F]]
+  def asCharBufferRW: F[BufMod#CharBufMod#IORW]
+  def asShortBufferRW: F[BufMod#ShortBufMod#IORW]
+  def asIntBufferRW: F[BufMod#IntBufMod#IORW]
+  def asLongBufferRW: F[BufMod#LongBufMod#IORW]
+  def asFloatBufferRW: F[BufMod#FloatBufMod#IORW]
+  def asDoubleBufferRW: F[BufMod#DoubleBufMod#IORW]
 
-  def putBuffer(buf: ByteBufferReadIO[F])(implicit fm: FlatMap[F]): F[Unit]
+  def putBuffer(buf: BufMod#ByteBufMod#IORO): F[Unit]
 
   def putChar(c: Char): F[Unit]
   def putCharAt(idx: Int, c: Char): F[Unit]
@@ -106,8 +124,8 @@ trait ByteBufferIO[F[_]] extends BufferIO[F, Byte] with ByteBufferReadIO[F] {
 
 object CharBufferIO {
   trait Module[F[_]] {
-    type IORO <: CharBufferReadIO[F]
-    type IORW <: CharBufferIO[F]
+    type IORO <: CharBufferReadIO[F, _ <: CharBufferIO.Module[F]]
+    type IORW <: CharBufferIO[F, _ <: CharBufferIO.Module[F]]
 
     def allocate(capacity: Int): F[IORW]
 
@@ -124,22 +142,24 @@ object IsoCharBufferIO {
   }
 }
 
-trait CharBufferReadIO[F[_]] extends BufferReadIO[F, Char] {
-  def duplicateRO: F[CharBufferReadIO[F]]
-  def sliceRO: F[CharBufferReadIO[F]]
+trait CharBufferReadIO[F[_], CharBufMod <: CharBufferIO.Module[F]] extends BufferReadIO[F, Char] {
+  def duplicateRO: F[CharBufMod#IORO]
+  def sliceRO: F[CharBufMod#IORO]
 
   def charAt(idx: Int): F[Char]
-  def read(dst: CharBufferIO[F])(implicit fm: FlatMap[F]): F[Int]
-  def subSequenceRO(start: Int, end: Int): F[CharBufferReadIO[F]]
+  def read(dst: CharBufMod#IORW): F[Int]
+  def subSequenceRO(start: Int, end: Int): F[CharBufMod#IORO]
 }
 
 // eliding the "append" methods because their reliance on csq.toString is just comically terrible
-trait CharBufferIO[F[_]] extends BufferIO[F, Char] with CharBufferReadIO[F] {
-  def duplicateRW: F[CharBufferIO[F]]
-  def sliceRW: F[CharBufferIO[F]]
+trait CharBufferIO[F[_], CharBufMod <: CharBufferIO.Module[F]] 
+    extends BufferIO[F, Char] with CharBufferReadIO[F, CharBufMod] {
 
-  def putBuffer(buf: CharBufferReadIO[F])(implicit fm: FlatMap[F]): F[Unit]
-  def subSequenceRW(start: Int, end: Int): F[CharBufferIO[F]]
+  def duplicateRW: F[CharBufMod#IORW]
+  def sliceRW: F[CharBufMod#IORW]
+
+  def putBuffer(buf: CharBufMod#IORO): F[Unit]
+  def subSequenceRW(start: Int, end: Int): F[CharBufMod#IORW]
 
   def putString(s: String): F[Unit]
   def putStringSlice(s: String, start: Int, end: Int): F[Unit]
@@ -148,8 +168,8 @@ trait CharBufferIO[F[_]] extends BufferIO[F, Char] with CharBufferReadIO[F] {
 
 object ShortBufferIO {
   trait Module[F[_]] {
-    type IORO <: ShortBufferReadIO[F]
-    type IORW <: ShortBufferIO[F]
+    type IORO <: ShortBufferReadIO[F, _ <: ShortBufferIO.Module[F]]
+    type IORW <: ShortBufferIO[F, _ <: ShortBufferIO.Module[F]]
 
     def allocate(capacity: Int): F[IORW]
 
@@ -163,22 +183,24 @@ object IsoShortBufferIO {
   }
 }
 
-trait ShortBufferReadIO[F[_]] extends BufferReadIO[F, Short] {
-  def duplicateRO: F[ShortBufferReadIO[F]]
-  def sliceRO: F[ShortBufferReadIO[F]]
+trait ShortBufferReadIO[F[_], ShortBufMod <: ShortBufferIO.Module[F]] extends BufferReadIO[F, Short] {
+  def duplicateRO: F[ShortBufMod#IORO]
+  def sliceRO: F[ShortBufMod#IORO]
 }
-trait ShortBufferIO[F[_]] extends BufferIO[F, Short] with ShortBufferReadIO[F] {
-  def duplicateRW: F[ShortBufferIO[F]]
-  def sliceRW: F[ShortBufferIO[F]]
+trait ShortBufferIO[F[_], ShortBufMod <: ShortBufferIO.Module[F]] 
+    extends BufferIO[F, Short] with ShortBufferReadIO[F, ShortBufMod] {
 
-  def putBuffer(buf: ShortBufferReadIO[F])(implicit fm: FlatMap[F]): F[Unit]
+  def duplicateRW: F[ShortBufMod#IORW]
+  def sliceRW: F[ShortBufMod#IORW]
+
+  def putBuffer(buf: ShortBufMod#IORO): F[Unit]
 }
 
 
 object IntBufferIO {
   trait Module[F[_]] {
-    type IORO <: IntBufferReadIO[F]
-    type IORW <: IntBufferIO[F]
+    type IORO <: IntBufferReadIO[F, _ <: IntBufferIO.Module[F]]
+    type IORW <: IntBufferIO[F, _ <: IntBufferIO.Module[F]]
 
     def allocate(capacity: Int): F[IORW]
 
@@ -192,22 +214,24 @@ object IsoIntBufferIO {
   }
 }
 
-trait IntBufferReadIO[F[_]] extends BufferReadIO[F,  Int] {
-  def duplicateRO: F[IntBufferReadIO[F]]
-  def sliceRO: F[IntBufferReadIO[F]]
+trait IntBufferReadIO[F[_], IntBufMod <: IntBufferIO.Module[F]] extends BufferReadIO[F,  Int] {
+  def duplicateRO: F[IntBufMod#IORO]
+  def sliceRO: F[IntBufMod#IORO]
 }
-trait IntBufferIO[F[_]] extends BufferIO[F, Int] with IntBufferReadIO[F] {
-  def duplicateRW: F[IntBufferIO[F]]
-  def sliceRW: F[IntBufferIO[F]]
+trait IntBufferIO[F[_], IntBufMod <: IntBufferIO.Module[F]] 
+    extends BufferIO[F, Int] with IntBufferReadIO[F, IntBufMod] {
 
-  def putBuffer(buf: IntBufferReadIO[F])(implicit fm: FlatMap[F]): F[Unit]
+  def duplicateRW: F[IntBufMod#IORW]
+  def sliceRW: F[IntBufMod#IORW]
+
+  def putBuffer(buf: IntBufMod#IORO): F[Unit]
 }
 
 
 object LongBufferIO {
   trait Module[F[_]] {
-    type IORO <: LongBufferReadIO[F]
-    type IORW <: LongBufferIO[F]
+    type IORO <: LongBufferReadIO[F, _ <: LongBufferIO.Module[F]]
+    type IORW <: LongBufferIO[F, _ <: LongBufferIO.Module[F]]
 
     def allocate(capacity: Int): F[IORW]
 
@@ -221,22 +245,24 @@ object IsoLongBufferIO {
   }
 }
 
-trait LongBufferReadIO[F[_]] extends BufferReadIO[F, Long] {
-  def duplicateRO: F[LongBufferReadIO[F]]
-  def sliceRO: F[LongBufferReadIO[F]]
+trait LongBufferReadIO[F[_], LongBufMod <: LongBufferIO.Module[F]] extends BufferReadIO[F, Long] {
+  def duplicateRO: F[LongBufMod#IORO]
+  def sliceRO: F[LongBufMod#IORO]
 }
-trait LongBufferIO[F[_]] extends BufferIO[F, Long] with LongBufferReadIO[F] {
-  def duplicateRW: F[LongBufferIO[F]]
-  def sliceRW: F[LongBufferIO[F]]
+trait LongBufferIO[F[_], LongBufMod <: LongBufferIO.Module[F]] 
+    extends BufferIO[F, Long] with LongBufferReadIO[F, LongBufMod] {
 
-  def putBuffer(buf: LongBufferReadIO[F])(implicit fm: FlatMap[F]): F[Unit]
+  def duplicateRW: F[LongBufMod#IORW]
+  def sliceRW: F[LongBufMod#IORW]
+
+  def putBuffer(buf: LongBufMod#IORO): F[Unit]
 }
 
 
 object FloatBufferIO {
   trait Module[F[_]] {
-    type IORO <: FloatBufferReadIO[F]
-    type IORW <: FloatBufferIO[F]
+    type IORO <: FloatBufferReadIO[F, _ <: FloatBufferIO.Module[F]]
+    type IORW <: FloatBufferIO[F, _ <: FloatBufferIO.Module[F]]
 
     def allocate(capacity: Int): F[IORW]
 
@@ -250,22 +276,24 @@ object IsoFloatBufferIO {
   }
 }
 
-trait FloatBufferReadIO[F[_]] extends BufferReadIO[F, Float] {
-  def duplicateRO: F[FloatBufferReadIO[F]]
-  def sliceRO: F[FloatBufferReadIO[F]]
+trait FloatBufferReadIO[F[_], FloatBufMod <: FloatBufferIO.Module[F]] extends BufferReadIO[F, Float] {
+  def duplicateRO: F[FloatBufMod#IORO]
+  def sliceRO: F[FloatBufMod#IORO]
 }
-trait FloatBufferIO[F[_]] extends BufferIO[F, Float] with FloatBufferReadIO[F] {
-  def duplicateRW: F[FloatBufferIO[F]]
-  def sliceRW: F[FloatBufferIO[F]]
+trait FloatBufferIO[F[_], FloatBufMod <: FloatBufferIO.Module[F]] 
+    extends BufferIO[F, Float] with FloatBufferReadIO[F, FloatBufMod] {
 
-  def putBuffer(buf: FloatBufferReadIO[F])(implicit fm: FlatMap[F]): F[Unit]
+  def duplicateRW: F[FloatBufMod#IORW]
+  def sliceRW: F[FloatBufMod#IORW]
+
+  def putBuffer(buf: FloatBufMod#IORO): F[Unit]
 }
 
 
 object DoubleBufferIO {
   trait Module[F[_]] {
-    type IORO <: DoubleBufferReadIO[F]
-    type IORW <: DoubleBufferIO[F]
+    type IORO <: DoubleBufferReadIO[F, _ <: DoubleBufferIO.Module[F]]
+    type IORW <: DoubleBufferIO[F, _ <: DoubleBufferIO.Module[F]]
 
     def allocate(capacity: Int): F[IORW]
 
@@ -279,16 +307,15 @@ object IsoDoubleBufferIO {
   }
 }
 
-trait DoubleBufferReadIO[F[_]] extends BufferReadIO[F, Double] {
-  def duplicateRO: F[DoubleBufferReadIO[F]]
-  def sliceRO: F[DoubleBufferReadIO[F]]
+trait DoubleBufferReadIO[F[_], DoubleBufMod <: DoubleBufferIO.Module[F]] extends BufferReadIO[F, Double] {
+  def duplicateRO: F[DoubleBufMod#IORO]
+  def sliceRO: F[DoubleBufMod#IORO]
 }
-trait DoubleBufferIO[F[_]] extends DoubleBufferReadIO[F] with BufferIO[F, Double] {
-  def duplicateRW: F[DoubleBufferIO[F]]
-  def sliceRW: F[DoubleBufferIO[F]]
+trait DoubleBufferIO[F[_], DoubleBufMod <: DoubleBufferIO.Module[F]] 
+    extends BufferIO[F, Double] with DoubleBufferReadIO[F, DoubleBufMod] {
 
-  // TODO: comment on why the Monad
-  def putBuffer(buf: DoubleBufferReadIO[F])(implicit fm: FlatMap[F]): F[Unit]
+  def duplicateRW: F[DoubleBufMod#IORW]
+  def sliceRW: F[DoubleBufMod#IORW]
+
+  def putBuffer(buf: DoubleBufMod#IORO): F[Unit]
 }
-
-
