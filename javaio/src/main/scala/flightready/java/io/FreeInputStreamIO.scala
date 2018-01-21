@@ -1,6 +1,6 @@
 package flightready.java.io
 
-import flightready.{Lift, Term1}
+import flightready.{Lift1, Term1}
 
 
 sealed trait InputStreamF[A] extends Term1[InputStreamIO, A]
@@ -27,7 +27,7 @@ object InputStreamF {
   }
 }
 
-class FreeInputStreamIO[F[_]](implicit l: Lift[InputStreamIO, F]) extends InputStreamIO[F] {
+class FreeInputStreamIO[F[_]](implicit l: Lift1[InputStreamIO, F]) extends InputStreamIO[F] {
   import InputStreamF._
 
   def available: F[Int] = l(Available)
