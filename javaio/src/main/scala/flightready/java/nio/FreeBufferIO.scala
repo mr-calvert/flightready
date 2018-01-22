@@ -95,9 +95,25 @@ trait BufferFs[IOA[X[_], _] <: BufferIO[X, B], B] extends BufferReadFs[IOA, B] {
   }
 }
 
+class FreeBufferIOModule[F[_]] extends BufferIO.Module[F] {
+  type ByteBufMod = Nothing
+  type CharBufMod = Nothing
+  type ShortBufMod = Nothing
+  type IntBufMod = Nothing
+  type LongBufMod = Nothing
+  type FloatBufMod = Nothing
+  type DoubleBufMod = Nothing
 
+  def byteBufferModule: ByteBufMod = ???
+  def charBufferModule: CharBufMod = ???
+  def doubleBufferModule: DoubleBufMod = ???
+  def floatBufferModule: FloatBufMod = ???
+  def intBufferModule: IntBufMod = ???
+  def longBufferModule: LongBufMod = ???
+  def shortBufferModule: ShortBufMod = ???
+}
 /*
-trait ByteBufferReadFs[IO[X[_]] <: ByteBufferReadIO[X]] extends BufferReadFs[IO, Byte] {
+trait ByteBufferReadFs[IO[X[_] <: ByteBufferReadIO[X, FreeBufferIOModule[F]]]] extends BufferReadFs[IO, Byte] {
   sealed trait ByteBufferReadF[A[_[_]]] extends BufferReadF[A]
 
   case object DuplicateRO extends ByteBufferReadF[ByteBufferReadIO] {
