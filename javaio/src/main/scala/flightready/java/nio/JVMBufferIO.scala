@@ -3,6 +3,7 @@ package flightready.java.nio
 import java.nio._
 
 import flightready.integration.effect.ThunkWrap
+import flightready.java.JVMA
 import flightready.IsoMutableRORW
 
 
@@ -33,7 +34,7 @@ class JVMBufferIOModule[F[_]](implicit tw: ThunkWrap[F]) extends BufferIO.Module
   def doubleBufferModule: DoubleBufMod = JVMDoubleBufferIO[F]
 }
 
-trait JVMBufferReadIO[F[_], A] extends BufferReadIO[F, A] { self: BufferAndWrap[F] =>
+trait JVMBufferReadIO[F[_], B] extends BufferReadIO[F, B] { self: BufferAndWrap[F] =>
   def isDirect: F[Boolean] = tw(buf.isDirect)
   def capacity: F[Int] = tw(buf.capacity)
 
@@ -52,7 +53,7 @@ trait JVMBufferReadIO[F[_], A] extends BufferReadIO[F, A] { self: BufferAndWrap[
   def rewind: F[Unit] = tw { buf.rewind; () }
 }
 
-trait JVMBufferIO[F[_], A] extends BufferIO[F, A] { self: BufferAndWrap[F] =>
+trait JVMBufferIO[F[_], B] extends BufferIO[F, B] { self: BufferAndWrap[F] =>
   def hasArray: F[Boolean] = tw(buf.hasArray)
   def arrayOffset: F[Int] = tw(buf.arrayOffset)
 }
@@ -74,21 +75,16 @@ class JVMByteBufferModule[F[_]](implicit tw: ThunkWrap[F]) extends IsoByteBuffer
   def wrapArraySlice(shorts: Array[Byte], ofs: Int, len: Int): F[JVMByteBufferIO[F]] =
     tw(new JVMByteBufferIO[F](ByteBuffer.wrap(shorts, ofs, len), tw))
 
-  type A = JVMBufferIOModule[F]
+  type A = JVMA
 
   // TODO: kill these and all like them
   type IORO = JVMByteBufferReadIO[F]
   type IORW = JVMByteBufferIO[F]
 
   // TODO: clean up readability, maybe local aliases for the long types
-  def isoMutableRORW: IsoMutableRORW[ByteBufferReadIO[F, JVMBufferIOModule[F]], 
-                                     ByteBufferIO[F, JVMBufferIOModule[F]], 
-                                     ByteBuffer] =
-
-    new IsoMutableRORW[ByteBufferReadIO[F, JVMBufferIOModule[F]],
-                                     ByteBufferIO[F, JVMBufferIOModule[F]], 
-                                     ByteBuffer] {
-      def toMutable(io: ByteBufferReadIO[F, JVMBufferIOModule[F]]): ByteBuffer = 
+  def isoMutableRORW: IsoMutableRORW[ByteBufferReadIO[F, JVMA], ByteBufferIO[F, JVMA], ByteBuffer] =
+    new IsoMutableRORW[ByteBufferReadIO[F, JVMA], ByteBufferIO[F, JVMA], ByteBuffer] {
+      def toMutable(io: ByteBufferReadIO[F, JVMA]): ByteBuffer = 
         io.asInstanceOf[JVMByteBufferReadIO[F]].buf
 
       def toIORO(sb: ByteBuffer): JVMByteBufferReadIO[F] = new JVMByteBufferReadIO(sb, tw)
@@ -99,7 +95,7 @@ class JVMByteBufferModule[F[_]](implicit tw: ThunkWrap[F]) extends IsoByteBuffer
 }
 
 class JVMByteBufferReadIO[F[_]](private[nio] val buf: ByteBuffer, val tw: ThunkWrap[F])
-      extends JVMBufferReadIO[F, Byte] with ByteBufferReadIO[F, JVMBufferIOModule[F]] with BufferAndWrap[F] {
+      extends JVMBufferReadIO[F, Byte] with ByteBufferReadIO[F, JVMA] with BufferAndWrap[F] {
 
   def duplicateRO = tw(new JVMByteBufferReadIO(buf.duplicate, tw))
   def sliceRO = tw(new JVMByteBufferReadIO[F](buf.slice, tw))
@@ -120,7 +116,7 @@ class JVMByteBufferReadIO[F[_]](private[nio] val buf: ByteBuffer, val tw: ThunkW
 }
 
 class JVMByteBufferIO[F[_]](buf: ByteBuffer, tw: ThunkWrap[F])
-  extends JVMByteBufferReadIO[F](buf, tw) with JVMBufferIO[F, Byte] with ByteBufferIO[F, JVMBufferIOModule[F]] {
+  extends JVMByteBufferReadIO[F](buf, tw) with JVMBufferIO[F, Byte] with ByteBufferIO[F, JVMA] {
 
   override def duplicateRO = tw(new JVMByteBufferReadIO(buf.asReadOnlyBuffer, tw))
   override def sliceRO = tw(new JVMByteBufferReadIO(buf.asReadOnlyBuffer.slice, tw))
@@ -152,7 +148,7 @@ class JVMByteBufferIO[F[_]](buf: ByteBuffer, tw: ThunkWrap[F])
   def putArraySlice(ss: Array[Byte], ofs: Int, len: Int): F[Unit] = tw { buf.put(ss, ofs, len); () }
   def putAt(idx: Int, s: Byte): F[Unit] = tw { buf.put(idx, s); () }
 
-  def putBuffer(in: ByteBufferReadIO[F, JVMBufferIOModule[F]]): F[Unit] =
+  def putBuffer(in: ByteBufferReadIO[F, JVMA]): F[Unit] =
     tw { buf.put(JVMByteBufferIO(tw).isoMutableRORW.toMutable(in)); () }
 
   def putChar(c: Char): F[Unit] = tw { buf.putChar(c); () }
@@ -188,17 +184,14 @@ class JVMCharBufferModule[F[_]](implicit tw: ThunkWrap[F]) extends IsoCharBuffer
   def wrapCharSequenceSlice(csq: CharSequence, start: Int, end: Int): F[JVMCharBufferReadIO[F]] =
     tw(new JVMCharBufferReadIO[F](CharBuffer.wrap(csq, start, end), tw))
 
-  type A = JVMBufferIOModule[F]
+  type A = JVMA
 
   type IORO = JVMCharBufferReadIO[F]
   type IORW = JVMCharBufferIO[F]
 
-  def isoMutableRORW: IsoMutableRORW[CharBufferReadIO[F, JVMBufferIOModule[F]], 
-                                     CharBufferIO[F, JVMBufferIOModule[F]], 
-                                     CharBuffer] =
-
-    new IsoMutableRORW[CharBufferReadIO[F, JVMBufferIOModule[F]], CharBufferIO[F, JVMBufferIOModule[F]], CharBuffer] {
-      def toMutable(io: CharBufferReadIO[F, JVMBufferIOModule[F]]): CharBuffer = 
+  def isoMutableRORW: IsoMutableRORW[CharBufferReadIO[F, JVMA], CharBufferIO[F, JVMA], CharBuffer] =
+    new IsoMutableRORW[CharBufferReadIO[F, JVMA], CharBufferIO[F, JVMA], CharBuffer] {
+      def toMutable(io: CharBufferReadIO[F, JVMA]): CharBuffer = 
         io.asInstanceOf[JVMCharBufferReadIO[F]].buf
       def toIORO(sb: CharBuffer): JVMCharBufferReadIO[F] = new JVMCharBufferReadIO(sb, tw)
       def toIORW(sb: CharBuffer): Option[JVMCharBufferIO[F]] =
@@ -208,7 +201,7 @@ class JVMCharBufferModule[F[_]](implicit tw: ThunkWrap[F]) extends IsoCharBuffer
 }
 
 class JVMCharBufferReadIO[F[_]](private[nio] val buf: CharBuffer, val tw: ThunkWrap[F])
-  extends JVMBufferReadIO[F, Char] with CharBufferReadIO[F, JVMBufferIOModule[F]] with BufferAndWrap[F] {
+  extends JVMBufferReadIO[F, Char] with CharBufferReadIO[F, JVMA] with BufferAndWrap[F] {
 
   def duplicateRO = tw(new JVMCharBufferReadIO(buf.duplicate, tw))
   def sliceRO = tw(new JVMCharBufferReadIO[F](buf.slice, tw))
@@ -222,12 +215,12 @@ class JVMCharBufferReadIO[F[_]](private[nio] val buf: CharBuffer, val tw: ThunkW
   def getInto(dst: Array[Char]): F[Unit] = tw { buf.get(dst); () }
   def getIntoSlice(dst: Array[Char], ofs: Int, len: Int): F[Unit] = tw { buf.get(dst, ofs, len); () }
 
-  def read(dst: CharBufferIO[F, JVMBufferIOModule[F]]): F[Int] =
+  def read(dst: CharBufferIO[F, JVMA]): F[Int] =
     tw(buf.read(JVMCharBufferIO(tw).isoMutableRORW.toMutable(dst)))
 }
 
 class JVMCharBufferIO[F[_]](buf: CharBuffer, tw: ThunkWrap[F])
-  extends JVMCharBufferReadIO[F](buf, tw) with JVMBufferIO[F, Char] with CharBufferIO[F, JVMBufferIOModule[F]] {
+  extends JVMCharBufferReadIO[F](buf, tw) with JVMBufferIO[F, Char] with CharBufferIO[F, JVMA] {
 
   override def duplicateRO = tw(new JVMCharBufferReadIO(buf.asReadOnlyBuffer, tw))
   override def sliceRO = tw(new JVMCharBufferReadIO(buf.slice.asReadOnlyBuffer(), tw))
@@ -250,7 +243,7 @@ class JVMCharBufferIO[F[_]](buf: CharBuffer, tw: ThunkWrap[F])
   def putString(s: String): F[Unit] = tw { buf.put(s); () }
   def putStringSlice(s: String, start: Int, end: Int): F[Unit] = tw { buf.put(s, start, end); () }
 
-  def putBuffer(in: CharBufferReadIO[F, JVMBufferIOModule[F]]): F[Unit] =
+  def putBuffer(in: CharBufferReadIO[F, JVMA]): F[Unit] =
     tw { buf.put(JVMCharBufferIO(tw).isoMutableRORW.toMutable(in)); () }
 }
 
@@ -268,19 +261,19 @@ class JVMShortBufferModule[F[_]](implicit tw: ThunkWrap[F]) extends IsoShortBuff
   def wrapArraySlice(shorts: Array[Short], ofs: Int, len: Int): F[JVMShortBufferIO[F]] =
     tw(new JVMShortBufferIO[F](ShortBuffer.wrap(shorts, ofs, len), tw))
 
-  type A = JVMBufferIOModule[F]
+  type A = JVMA
   type IORO = JVMShortBufferReadIO[F]
   type IORW = JVMShortBufferIO[F]
 
-  def isoMutableRORW: IsoMutableRORW[ShortBufferReadIO[F, JVMBufferIOModule[F]], 
-                                     ShortBufferIO[F, JVMBufferIOModule[F]], 
+  def isoMutableRORW: IsoMutableRORW[ShortBufferReadIO[F, JVMA], 
+                                     ShortBufferIO[F, JVMA], 
                                      ShortBuffer] =
 
-    new IsoMutableRORW[ShortBufferReadIO[F, JVMBufferIOModule[F]], 
-                       ShortBufferIO[F, JVMBufferIOModule[F]], 
+    new IsoMutableRORW[ShortBufferReadIO[F, JVMA], 
+                       ShortBufferIO[F, JVMA], 
                        ShortBuffer] {
 
-      def toMutable(io: ShortBufferReadIO[F, JVMBufferIOModule[F]]): ShortBuffer = 
+      def toMutable(io: ShortBufferReadIO[F, JVMA]): ShortBuffer = 
         io.asInstanceOf[JVMShortBufferReadIO[F]].buf
 
       def toIORO(sb: ShortBuffer): JVMShortBufferReadIO[F] = new JVMShortBufferReadIO(sb, tw)
@@ -291,7 +284,7 @@ class JVMShortBufferModule[F[_]](implicit tw: ThunkWrap[F]) extends IsoShortBuff
 }
 
 class JVMShortBufferReadIO[F[_]](private[nio] val buf: ShortBuffer, val tw: ThunkWrap[F])
-  extends JVMBufferReadIO[F, Short] with ShortBufferReadIO[F, JVMBufferIOModule[F]] with BufferAndWrap[F] {
+  extends JVMBufferReadIO[F, Short] with ShortBufferReadIO[F, JVMA] with BufferAndWrap[F] {
 
   def duplicateRO = tw(new JVMShortBufferReadIO(buf.duplicate, tw))
   def sliceRO = tw(new JVMShortBufferReadIO[F](buf.slice, tw))
@@ -305,7 +298,7 @@ class JVMShortBufferReadIO[F[_]](private[nio] val buf: ShortBuffer, val tw: Thun
 }
 
 class JVMShortBufferIO[F[_]](buf: ShortBuffer, tw: ThunkWrap[F])
-  extends JVMShortBufferReadIO[F](buf, tw) with JVMBufferIO[F, Short] with ShortBufferIO[F, JVMBufferIOModule[F]] {
+  extends JVMShortBufferReadIO[F](buf, tw) with JVMBufferIO[F, Short] with ShortBufferIO[F, JVMA] {
 
   override def duplicateRO = tw(new JVMShortBufferReadIO(buf.asReadOnlyBuffer, tw))
   override def sliceRO = tw(new JVMShortBufferReadIO(buf.asReadOnlyBuffer.slice, tw))
@@ -322,7 +315,7 @@ class JVMShortBufferIO[F[_]](buf: ShortBuffer, tw: ThunkWrap[F])
   def putArraySlice(ss: Array[Short], ofs: Int, len: Int): F[Unit] = tw { buf.put(ss, ofs, len); () }
   def putAt(idx: Int, s: Short): F[Unit] = tw { buf.put(idx, s); () }
 
-  def putBuffer(in: ShortBufferReadIO[F, JVMBufferIOModule[F]]): F[Unit] = 
+  def putBuffer(in: ShortBufferReadIO[F, JVMA]): F[Unit] = 
     tw { buf.put(JVMShortBufferIO(tw).isoMutableRORW.toMutable(in)); () }
 }
 
@@ -340,16 +333,16 @@ class JVMIntBufferModule[F[_]](implicit tw: ThunkWrap[F]) extends IsoIntBufferIO
   def wrapArraySlice(ints: Array[Int], ofs: Int, len: Int): F[JVMIntBufferIO[F]] =
     tw(new JVMIntBufferIO[F](IntBuffer.wrap(ints, ofs, len), tw))
 
-  type A = JVMBufferIOModule[F]
+  type A = JVMA
   type IORO = JVMIntBufferReadIO[F]
   type IORW = JVMIntBufferIO[F]
 
-  def isoMutableRORW: IsoMutableRORW[IntBufferReadIO[F, JVMBufferIOModule[F]], 
-                                     IntBufferIO[F, JVMBufferIOModule[F]], 
+  def isoMutableRORW: IsoMutableRORW[IntBufferReadIO[F, JVMA], 
+                                     IntBufferIO[F, JVMA], 
                                      IntBuffer] =
 
-    new IsoMutableRORW[IntBufferReadIO[F, JVMBufferIOModule[F]], IntBufferIO[F, JVMBufferIOModule[F]], IntBuffer] {
-      def toMutable(io: IntBufferReadIO[F, JVMBufferIOModule[F]]): IntBuffer = 
+    new IsoMutableRORW[IntBufferReadIO[F, JVMA], IntBufferIO[F, JVMA], IntBuffer] {
+      def toMutable(io: IntBufferReadIO[F, JVMA]): IntBuffer = 
         io.asInstanceOf[JVMIntBufferReadIO[F]].buf
 
       def toIORO(db: IntBuffer): JVMIntBufferReadIO[F] = new JVMIntBufferReadIO(db, tw)
@@ -360,7 +353,7 @@ class JVMIntBufferModule[F[_]](implicit tw: ThunkWrap[F]) extends IsoIntBufferIO
 }
 
 class JVMIntBufferReadIO[F[_]](private[nio] val buf: IntBuffer, val tw: ThunkWrap[F])
-      extends JVMBufferReadIO[F, Int] with IntBufferReadIO[F, JVMBufferIOModule[F]] with BufferAndWrap[F] {
+      extends JVMBufferReadIO[F, Int] with IntBufferReadIO[F, JVMA] with BufferAndWrap[F] {
 
   def duplicateRO = tw(new JVMIntBufferReadIO(buf.duplicate, tw))
   def sliceRO = tw(new JVMIntBufferReadIO[F](buf.slice, tw))
@@ -374,7 +367,7 @@ class JVMIntBufferReadIO[F[_]](private[nio] val buf: IntBuffer, val tw: ThunkWra
 }
 
 class JVMIntBufferIO[F[_]](buf: IntBuffer, tw: ThunkWrap[F])
-      extends JVMIntBufferReadIO[F](buf, tw) with JVMBufferIO[F, Int] with IntBufferIO[F, JVMBufferIOModule[F]] {
+      extends JVMIntBufferReadIO[F](buf, tw) with JVMBufferIO[F, Int] with IntBufferIO[F, JVMA] {
 
   def array: F[Array[Int]] = tw(buf.array)
 
@@ -391,7 +384,7 @@ class JVMIntBufferIO[F[_]](buf: IntBuffer, tw: ThunkWrap[F])
   def putArraySlice(fs: Array[Int], ofs: Int, len: Int): F[Unit] = tw { buf.put(fs, ofs, len); () }
   def putAt(idx: Int, f: Int): F[Unit] = tw { buf.put(idx, f); () }
 
-  def putBuffer(in: IntBufferReadIO[F, JVMBufferIOModule[F]]) =
+  def putBuffer(in: IntBufferReadIO[F, JVMA]) =
     tw { buf.put(JVMIntBufferIO(tw).isoMutableRORW.toMutable(in)); () }
 }
 
@@ -409,20 +402,15 @@ class JVMLongBufferModule[F[_]](implicit tw: ThunkWrap[F]) extends IsoLongBuffer
   def wrapArraySlice(floats: Array[Long], ofs: Int, len: Int): F[JVMLongBufferIO[F]] =
     tw(new JVMLongBufferIO[F](LongBuffer.wrap(floats, ofs, len), tw))
 
-  type A = JVMBufferIOModule[F]
+  type A = JVMA
 
   type IORO = JVMLongBufferReadIO[F]
   type IORW = JVMLongBufferIO[F]
 
-  def isoMutableRORW: IsoMutableRORW[LongBufferReadIO[F, JVMBufferIOModule[F]], 
-                                     LongBufferIO[F, JVMBufferIOModule[F]], 
-                                     LongBuffer] =
+  def isoMutableRORW: IsoMutableRORW[LongBufferReadIO[F, JVMA], LongBufferIO[F, JVMA], LongBuffer] = 
+    new IsoMutableRORW[LongBufferReadIO[F, JVMA], LongBufferIO[F, JVMA], LongBuffer] {
 
-    new IsoMutableRORW[LongBufferReadIO[F, JVMBufferIOModule[F]], 
-                       LongBufferIO[F, JVMBufferIOModule[F]], 
-                       LongBuffer] {
-
-      def toMutable(io: LongBufferReadIO[F, JVMBufferIOModule[F]]): LongBuffer = 
+      def toMutable(io: LongBufferReadIO[F, JVMA]): LongBuffer = 
         io.asInstanceOf[JVMLongBufferReadIO[F]].buf
 
       def toIORO(db: LongBuffer): JVMLongBufferReadIO[F] = new JVMLongBufferReadIO(db, tw)
@@ -433,7 +421,7 @@ class JVMLongBufferModule[F[_]](implicit tw: ThunkWrap[F]) extends IsoLongBuffer
 }
 
 class JVMLongBufferReadIO[F[_]](private[nio] val buf: LongBuffer, val tw: ThunkWrap[F])
-  extends JVMBufferReadIO[F, Long] with LongBufferReadIO[F, JVMBufferIOModule[F]] with BufferAndWrap[F] {
+  extends JVMBufferReadIO[F, Long] with LongBufferReadIO[F, JVMA] with BufferAndWrap[F] {
 
   def duplicateRO = tw(new JVMLongBufferReadIO(buf.duplicate, tw))
   def sliceRO = tw(new JVMLongBufferReadIO[F](buf.slice, tw))
@@ -447,7 +435,7 @@ class JVMLongBufferReadIO[F[_]](private[nio] val buf: LongBuffer, val tw: ThunkW
 }
 
 class JVMLongBufferIO[F[_]](buf: LongBuffer, tw: ThunkWrap[F])
-  extends JVMLongBufferReadIO[F](buf, tw) with JVMBufferIO[F, Long] with LongBufferIO[F, JVMBufferIOModule[F]] {
+  extends JVMLongBufferReadIO[F](buf, tw) with JVMBufferIO[F, Long] with LongBufferIO[F, JVMA] {
 
   def array: F[Array[Long]] = tw(buf.array)
 
@@ -464,7 +452,7 @@ class JVMLongBufferIO[F[_]](buf: LongBuffer, tw: ThunkWrap[F])
   def putArraySlice(fs: Array[Long], ofs: Int, len: Int): F[Unit] = tw { buf.put(fs, ofs, len); () }
   def putAt(idx: Int, f: Long): F[Unit] = tw { buf.put(idx, f); () }
 
-  def putBuffer(in: LongBufferReadIO[F, JVMBufferIOModule[F]]): F[Unit] = 
+  def putBuffer(in: LongBufferReadIO[F, JVMA]): F[Unit] = 
     tw { buf.put(JVMLongBufferIO(tw).isoMutableRORW.toMutable(in)); () }
 }
 
@@ -482,20 +470,15 @@ class JVMFloatBufferModule[F[_]](implicit tw: ThunkWrap[F]) extends IsoFloatBuff
   def wrapArraySlice(floats: Array[Float], ofs: Int, len: Int): F[JVMFloatBufferIO[F]] =
     tw(new JVMFloatBufferIO[F](FloatBuffer.wrap(floats, ofs, len), tw))
 
-  type A = JVMBufferIOModule[F]
+  type A = JVMA
 
   type IORO = JVMFloatBufferReadIO[F]
   type IORW = JVMFloatBufferIO[F]
 
-  def isoMutableRORW: IsoMutableRORW[FloatBufferReadIO[F, JVMBufferIOModule[F]], 
-                                     FloatBufferIO[F, JVMBufferIOModule[F]], 
-                                     FloatBuffer] =
+  def isoMutableRORW: IsoMutableRORW[FloatBufferReadIO[F, JVMA], FloatBufferIO[F, JVMA], FloatBuffer] =
+    new IsoMutableRORW[FloatBufferReadIO[F, JVMA], FloatBufferIO[F, JVMA], FloatBuffer] {
 
-    new IsoMutableRORW[FloatBufferReadIO[F, JVMBufferIOModule[F]], 
-                       FloatBufferIO[F, JVMBufferIOModule[F]], 
-                       FloatBuffer] {
-
-      def toMutable(io: FloatBufferReadIO[F, JVMBufferIOModule[F]]): FloatBuffer = 
+      def toMutable(io: FloatBufferReadIO[F, JVMA]): FloatBuffer = 
         io.asInstanceOf[JVMFloatBufferReadIO[F]].buf
 
       def toIORO(db: FloatBuffer): JVMFloatBufferReadIO[F] = new JVMFloatBufferReadIO(db, tw)
@@ -506,7 +489,7 @@ class JVMFloatBufferModule[F[_]](implicit tw: ThunkWrap[F]) extends IsoFloatBuff
 }
 
 class JVMFloatBufferReadIO[F[_]](private[nio] val buf: FloatBuffer, val tw: ThunkWrap[F])
-      extends JVMBufferReadIO[F, Float] with FloatBufferReadIO[F, JVMBufferIOModule[F]] with BufferAndWrap[F] {
+      extends JVMBufferReadIO[F, Float] with FloatBufferReadIO[F, JVMA] with BufferAndWrap[F] {
 
   def duplicateRO = tw(new JVMFloatBufferReadIO(buf.duplicate, tw))
   def sliceRO = tw(new JVMFloatBufferReadIO[F](buf.slice, tw))
@@ -522,7 +505,7 @@ class JVMFloatBufferReadIO[F[_]](private[nio] val buf: FloatBuffer, val tw: Thun
 class JVMFloatBufferIO[F[_]](buf: FloatBuffer, tw: ThunkWrap[F])
       extends JVMFloatBufferReadIO[F](buf, tw) 
         with JVMBufferIO[F, Float] 
-        with FloatBufferIO[F, JVMBufferIOModule[F]] {
+        with FloatBufferIO[F, JVMA] {
 
   def array: F[Array[Float]] = tw(buf.array)
 
@@ -539,7 +522,7 @@ class JVMFloatBufferIO[F[_]](buf: FloatBuffer, tw: ThunkWrap[F])
   def putArraySlice(fs: Array[Float], ofs: Int, len: Int): F[Unit] = tw { buf.put(fs, ofs, len); () }
   def putAt(idx: Int, f: Float): F[Unit] = tw { buf.put(idx, f); () }
 
-  def putBuffer(in: FloatBufferReadIO[F, JVMBufferIOModule[F]]): F[Unit] = 
+  def putBuffer(in: FloatBufferReadIO[F, JVMA]): F[Unit] = 
     tw { buf.put(JVMFloatBufferIO(tw).isoMutableRORW.toMutable(in)); () }
 }
 
@@ -557,20 +540,20 @@ class JVMDoubleBufferModule[F[_]](implicit tw: ThunkWrap[F]) extends IsoDoubleBu
   def wrapArraySlice(doubles: Array[Double], ofs: Int, len: Int): F[JVMDoubleBufferIO[F]] =
     tw(new JVMDoubleBufferIO[F](DoubleBuffer.wrap(doubles, ofs, len), tw))
 
-  type A = JVMBufferIOModule[F]
+  type A = JVMA
 
   type IORO = JVMDoubleBufferReadIO[F]
   type IORW = JVMDoubleBufferIO[F]
 
-  def isoMutableRORW: IsoMutableRORW[DoubleBufferReadIO[F, JVMBufferIOModule[F]], 
-                                     DoubleBufferIO[F, JVMBufferIOModule[F]], 
+  def isoMutableRORW: IsoMutableRORW[DoubleBufferReadIO[F, JVMA], 
+                                     DoubleBufferIO[F, JVMA], 
                                      DoubleBuffer] =
 
-    new IsoMutableRORW[DoubleBufferReadIO[F, JVMBufferIOModule[F]], 
-                       DoubleBufferIO[F, JVMBufferIOModule[F]], 
+    new IsoMutableRORW[DoubleBufferReadIO[F, JVMA], 
+                       DoubleBufferIO[F, JVMA], 
                        DoubleBuffer] {
 
-      def toMutable(io: DoubleBufferReadIO[F, JVMBufferIOModule[F]]): DoubleBuffer = 
+      def toMutable(io: DoubleBufferReadIO[F, JVMA]): DoubleBuffer = 
         io.asInstanceOf[JVMDoubleBufferReadIO[F]].buf
 
       def toIORO(db: DoubleBuffer): JVMDoubleBufferReadIO[F] = new JVMDoubleBufferReadIO(db, tw)
@@ -581,7 +564,7 @@ class JVMDoubleBufferModule[F[_]](implicit tw: ThunkWrap[F]) extends IsoDoubleBu
 }
 
 class JVMDoubleBufferReadIO[F[_]](private[nio] val buf: DoubleBuffer, val tw: ThunkWrap[F])
-    extends JVMBufferReadIO[F, Double] with DoubleBufferReadIO[F, JVMBufferIOModule[F]] with BufferAndWrap[F] {
+    extends JVMBufferReadIO[F, Double] with DoubleBufferReadIO[F, JVMA] with BufferAndWrap[F] {
 
   def duplicateRO = tw(new JVMDoubleBufferReadIO(buf.duplicate, tw))
   def sliceRO = tw(new JVMDoubleBufferReadIO[F](buf.slice, tw))
@@ -597,7 +580,7 @@ class JVMDoubleBufferReadIO[F[_]](private[nio] val buf: DoubleBuffer, val tw: Th
 class JVMDoubleBufferIO[F[_]](buf: DoubleBuffer, tw: ThunkWrap[F])
     extends JVMDoubleBufferReadIO[F](buf, tw) 
       with JVMBufferIO[F, Double] 
-      with DoubleBufferIO[F, JVMBufferIOModule[F]] {
+      with DoubleBufferIO[F, JVMA] {
 
   def array: F[Array[Double]] = tw(buf.array)
 
@@ -614,6 +597,6 @@ class JVMDoubleBufferIO[F[_]](buf: DoubleBuffer, tw: ThunkWrap[F])
   def putArraySlice(ds: Array[Double], ofs: Int, len: Int): F[Unit] = tw { buf.put(ds, ofs, len); () }
   def putAt(idx: Int, d: Double): F[Unit] = tw { buf.put(idx, d); () }
 
-  def putBuffer(in: DoubleBufferReadIO[F, JVMBufferIOModule[F]]): F[Unit] = 
+  def putBuffer(in: DoubleBufferReadIO[F, JVMA]): F[Unit] = 
     tw { buf.put(JVMDoubleBufferIO(tw).isoMutableRORW.toMutable(in)); () }
 }

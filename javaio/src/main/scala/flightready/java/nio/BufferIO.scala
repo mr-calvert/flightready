@@ -65,11 +65,11 @@ object BufferIO {
 
 object ByteBufferIO {
   trait Module[F[_]] {
-    // TODO: kill these
-    type IORO <: ByteBufferReadIO[F, _ <: BufferIO.Module[F]]
-    type IORW <: ByteBufferIO[F, _ <: BufferIO.Module[F]]
-
     type A
+
+    // TODO: kill these
+    type IORO <: ByteBufferReadIO[F, A]
+    type IORW <: ByteBufferIO[F, A]
 
     def allocate(capacity: Int): F[IORW]
     def allocateDirect(capacity: Int): F[IORW]
@@ -247,9 +247,7 @@ object LongBufferIO {
 }
 object IsoLongBufferIO {
   trait Module[F[_]] extends LongBufferIO.Module[F] {
-    def isoMutableRORW: IsoMutableRORW[LongBufferReadIO[F, JVMBufferIOModule[F]], 
-                                   LongBufferIO[F, JVMBufferIOModule[F]], 
-                                   java.nio.LongBuffer]
+    def isoMutableRORW: IsoMutableRORW[LongBufferReadIO[F, A], LongBufferIO[F, A], java.nio.LongBuffer]
   }
 }
 
@@ -280,9 +278,7 @@ object FloatBufferIO {
 }
 object IsoFloatBufferIO {
   trait Module[F[_]] extends FloatBufferIO.Module[F] {
-    def isoMutableRORW: IsoMutableRORW[FloatBufferReadIO[F, JVMBufferIOModule[F]], 
-                                       FloatBufferIO[F, JVMBufferIOModule[F]] , 
-                                       java.nio.FloatBuffer]
+    def isoMutableRORW: IsoMutableRORW[FloatBufferReadIO[F, A], FloatBufferIO[F, A], java.nio.FloatBuffer]
   }
 }
 
