@@ -70,17 +70,17 @@ trait BufferReadFs[IOA[X[_], _] <: BufferReadIO[X, B], B] {
 
 trait BufferFs[IOA[X[_], _] <: BufferIO[X, B], B] extends BufferReadFs[IOA, B] {
   sealed trait BufferF[A[_[_], _]] extends BufferReadF[A]
-  sealed trait BufferF1[A] extends BufferF[({ type AF[X[_], _] = A })#AF]
+  sealed trait BufferF1[A] extends BufferF[({ type AF[X[_], _] = A })#AF] with TermP1[IOA, A]
 
-  case object HasArray extends BufferF1[Boolean] { def selectA[F[_], A](io: IOA[F, A]): F[Boolean] = io.hasArray }
-  case object Array extends BufferF1[Array[B]] { def selectA[F[_], A](io: IOA[F, A]): F[Array[B]] = io.array }
-  case object ArrayOffset extends BufferF1[Int] { def selectA[F[_], A](io: IOA[F, A]): F[Int] = io.arrayOffset }
-  case object Compact extends BufferF1[Unit] { def selectA[F[_], A](io: IOA[F, A]): F[Unit] = io.compact }
-  case class Put(b: B) extends BufferF1[Unit] { def selectA[F[_], A](io: IOA[F, A]): F[Unit] = io.put(b) }
-  case class PutAt(idx: Int, b: B) extends BufferF1[Unit] { def selectA[F[_], A](io: IOA[F, A]): F[Unit] = io.putAt(idx, b) }
-  case class PutArray(as: Array[B]) extends BufferF1[Unit] { def selectA[F[_], A](io: IOA[F, A]): F[Unit] = io.putArray(as) }
+  case object HasArray extends BufferF1[Boolean] { def select[F[_]](io: IOA[F, _]): F[Boolean] = io.hasArray }
+  case object Array extends BufferF1[Array[B]] { def select[F[_]](io: IOA[F, _]): F[Array[B]] = io.array }
+  case object ArrayOffset extends BufferF1[Int] { def select[F[_]](io: IOA[F, _]): F[Int] = io.arrayOffset }
+  case object Compact extends BufferF1[Unit] { def select[F[_]](io: IOA[F, _]): F[Unit] = io.compact }
+  case class Put(b: B) extends BufferF1[Unit] { def select[F[_]](io: IOA[F, _]): F[Unit] = io.put(b) }
+  case class PutAt(idx: Int, b: B) extends BufferF1[Unit] { def select[F[_]](io: IOA[F, _]): F[Unit] = io.putAt(idx, b) }
+  case class PutArray(as: Array[B]) extends BufferF1[Unit] { def select[F[_]](io: IOA[F, _]): F[Unit] = io.putArray(as) }
   case class PutArraySlice(as: Array[B], ofs: Int, len: Int) extends BufferF1[Unit] {
-    def selectA[F[_], A](io: IOA[F, A]): F[Unit] = io.putArraySlice(as, ofs, len)
+    def select[F[_]](io: IOA[F, _]): F[Unit] = io.putArraySlice(as, ofs, len)
   }
 
   trait FreeBufferIO[F[_]] extends FreeBufferReadIO[F] with BufferIO[F, B] {
