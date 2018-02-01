@@ -6,27 +6,27 @@ import flightready.{ FreeA, Lift, Term1 }
 sealed trait InputStreamF[A] extends Term1[InputStreamIO, A]
 
 object InputStreamF {
-  case object Available extends InputStreamF[Int] { def select[F[_], A](io: InputStreamIO[F, A]): F[Int] = io.available }
-  case object Reset extends InputStreamF[Unit] { def select[F[_], A](io: InputStreamIO[F, A]): F[Unit] = io.reset }
-  case object Read extends InputStreamF[Int] { def select[F[_], A](io: InputStreamIO[F, A]): F[Int] = io.read }
+  case object Available extends InputStreamF[Int] { def select[F[_]](io: InputStreamIO[F, _]): F[Int] = io.available }
+  case object Reset extends InputStreamF[Unit] { def select[F[_]](io: InputStreamIO[F, _]): F[Unit] = io.reset }
+  case object Read extends InputStreamF[Int] { def select[F[_]](io: InputStreamIO[F, _]): F[Int] = io.read }
 
   final case class Mark(readLimit: Int) extends InputStreamF[Unit] {
-    def select[F[_], A](io: InputStreamIO[F, A]): F[Unit] = io.mark(readLimit)
+    def select[F[_]](io: InputStreamIO[F, _]): F[Unit] = io.mark(readLimit)
   }
   case object MarkSupported extends InputStreamF[Boolean] {
-    def select[F[_], A](io: InputStreamIO[F, A]): F[Boolean] = io.markSupported
+    def select[F[_]](io: InputStreamIO[F, _]): F[Boolean] = io.markSupported
   }
   final case class ReadInto(bytesOut: Array[Byte]) extends InputStreamF[Int] {
-    def select[F[_], A](io: InputStreamIO[F, A]): F[Int] = io.readInto(bytesOut)
+    def select[F[_]](io: InputStreamIO[F, _]): F[Int] = io.readInto(bytesOut)
   }
   final case class ReadIntoSlice(bytesOut: Array[Byte], ofs: Int, len: Int) extends InputStreamF[Int] {
-    def select[F[_], A](io: InputStreamIO[F, A]): F[Int] = io.readIntoSlice(bytesOut, ofs, len)
+    def select[F[_]](io: InputStreamIO[F, _]): F[Int] = io.readIntoSlice(bytesOut, ofs, len)
   }
   final case class Skip(n: Long) extends InputStreamF[Long] {
-    def select[F[_], A](io: InputStreamIO[F, A]): F[Long] = io.skip(n)
+    def select[F[_]](io: InputStreamIO[F, _]): F[Long] = io.skip(n)
  }
   case object Close extends InputStreamF[Unit] {
-    def select[F[_], A](io: InputStreamIO[F, A]): F[Unit] = io.close
+    def select[F[_]](io: InputStreamIO[F, _]): F[Unit] = io.close
   }
 }
 

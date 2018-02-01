@@ -1,6 +1,5 @@
 package flightready
 
-// TODO: consider renaming Inject (or something else inspired by Scalaz/Cats)
 /** Knows how to put a bare algebra term into a particular F.
   * 
   * F may be as simple as Free on IO, or some complex optimized coproduct representation.

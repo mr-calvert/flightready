@@ -2,41 +2,41 @@ package flightready.java.nio
 
 import java.nio.ByteOrder
 
-import flightready.{Lift, Term}
+import flightready.{ Lift, Term, TermP1 }
 
 
 trait BufferReadFs[IOA[X[_], _] <: BufferReadIO[X, B], B] {
   sealed trait BufferReadF[A[_[_], _]] extends Term[IOA, A]
-  sealed trait BufferReadF1[A] extends BufferReadF[({ type AF[X[_], _] = A })#AF]
+  sealed trait BufferReadF1[A] extends BufferReadF[({ type AF[X[_], _] = A })#AF] with TermP1[IOA, A]
 
-  case object Capacity extends BufferReadF1[Int] { def selectA[F[_], A](io: IOA[F, A]): F[Int] = io.capacity }
-  case object IsDirect extends BufferReadF1[Boolean] { def selectA[F[_], A](io: IOA[F, A]): F[Boolean] = io.isDirect }
-  case object Order extends BufferReadF1[ByteOrder] { def selectA[F[_], A](io: IOA[F, A]): F[ByteOrder] = io.order }
-  case object Limit extends BufferReadF1[Int] { def selectA[F[_], A](io: IOA[F, A]): F[Int] = io.limit }
-  case object Mark extends BufferReadF1[Unit] { def selectA[F[_], A](io: IOA[F, A]): F[Unit] = io.mark }
-  case object Position extends BufferReadF1[Int] { def selectA[F[_], A](io: IOA[F, A]): F[Int] = io.position }
-  case object HasRemaining extends BufferReadF1[Boolean] { def selectA[F[_], A](io: IOA[F, A]): F[Boolean] = io.hasRemaining }
-  case object Remaining extends BufferReadF1[Int] { def selectA[F[_], A](io: IOA[F, A]): F[Int] = io.remaining }
-  case object Clear extends BufferReadF1[Unit] { def selectA[F[_], A](io: IOA[F, A]): F[Unit] = io.clear }
-  case object Flip extends BufferReadF1[Unit] { def selectA[F[_], A](io: IOA[F, A]): F[Unit] = io.flip }
-  case object Reset extends BufferReadF1[Unit] { def selectA[F[_], A](io: IOA[F, A]): F[Unit] = io.reset }
-  case object Rewind extends BufferReadF1[Unit] { def selectA[F[_], A](io: IOA[F, A]): F[Unit] = io.rewind }
-  case object Get extends BufferReadF1[B] { def selectA[F[_], A](io: IOA[F, A]): F[B] = io.get }
+  case object Capacity extends BufferReadF1[Int] { def select[F[_]](io: IOA[F, _]): F[Int] = io.capacity }
+  case object IsDirect extends BufferReadF1[Boolean] { def select[F[_]](io: IOA[F, _]): F[Boolean] = io.isDirect }
+  case object Order extends BufferReadF1[ByteOrder] { def select[F[_]](io: IOA[F, _]): F[ByteOrder] = io.order }
+  case object Limit extends BufferReadF1[Int] { def select[F[_]](io: IOA[F, _]): F[Int] = io.limit }
+  case object Mark extends BufferReadF1[Unit] { def select[F[_]](io: IOA[F, _]): F[Unit] = io.mark }
+  case object Position extends BufferReadF1[Int] { def select[F[_]](io: IOA[F, _]): F[Int] = io.position }
+  case object HasRemaining extends BufferReadF1[Boolean] { def select[F[_]](io: IOA[F, _]): F[Boolean] = io.hasRemaining }
+  case object Remaining extends BufferReadF1[Int] { def select[F[_]](io: IOA[F, _]): F[Int] = io.remaining }
+  case object Clear extends BufferReadF1[Unit] { def select[F[_]](io: IOA[F, _]): F[Unit] = io.clear }
+  case object Flip extends BufferReadF1[Unit] { def select[F[_]](io: IOA[F, _]): F[Unit] = io.flip }
+  case object Reset extends BufferReadF1[Unit] { def select[F[_]](io: IOA[F, _]): F[Unit] = io.reset }
+  case object Rewind extends BufferReadF1[Unit] { def select[F[_]](io: IOA[F, _]): F[Unit] = io.rewind }
+  case object Get extends BufferReadF1[B] { def select[F[_]](io: IOA[F, _]): F[B] = io.get }
 
   case class SetLimit(limit: Int) extends BufferReadF1[Unit] {
-    def selectA[F[_], A](io: IOA[F, A]): F[Unit] = io.setLimit(limit)
+    def select[F[_]](io: IOA[F, _]): F[Unit] = io.setLimit(limit)
   }
   case class SetPosition(position: Int) extends BufferReadF1[Unit] {
-    def selectA[F[_], A](io: IOA[F, A]): F[Unit] = io.setPosition(position)
+    def select[F[_]](io: IOA[F, _]): F[Unit] = io.setPosition(position)
   }
   case class GetAt(idx: Int) extends BufferReadF1[B] {
-    def selectA[F[_], A](io: IOA[F, A]): F[B] = io.getAt(idx)
+    def select[F[_]](io: IOA[F, _]): F[B] = io.getAt(idx)
   }
   case class GetInto(dst: Array[B]) extends BufferReadF1[Unit] {
-    def selectA[F[_], A](io: IOA[F, A]): F[Unit] = io.getInto(dst)
+    def select[F[_]](io: IOA[F, _]): F[Unit] = io.getInto(dst)
   }
   case class GetIntoSlice(dst: Array[B], ofs: Int, len: Int) extends BufferReadF1[Unit] {
-    def selectA[F[_], A](io: IOA[F, A]): F[Unit] = io.getIntoSlice(dst, ofs, len)
+    def select[F[_]](io: IOA[F, _]): F[Unit] = io.getIntoSlice(dst, ofs, len)
   }
 
   trait FreeBufferReadIO[F[_]] extends BufferReadIO[F, B] {
