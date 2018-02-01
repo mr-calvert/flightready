@@ -1,74 +1,14 @@
 package flightready.java.nio.file
 
-import flightready.IsoImmutableUnsafe
 import flightready.integration.category.Order
+import flightready.util.TaggedNewtype.{ Tagged, @@ }
 
 
-// TODO: combine the comments for the object and the trait and uncomment the object, maybe the top comment moves to package, add a comment that the `P`s are in the interface because Path is immutable
-/** Principled file system path manipulation.
-  *
-  * Java presents a messy but comprehensive suite of tools for
-  * representing and manipulating file system paths. The primary
-  * touch point for these tools is [[java.nio.file.Path]] which is at
-  * least immutable, but its full of side effects and exceptions.
-  * Thus, despite its incumbent position, `Path` is ineligible to
-  * appear in FlightReady's interface.
-  *
-  * `Path` defers all specifics regarding file paths to
-  * [[java.nio.file.FileSystem]] objects which opaquely implement
-  * system dependent rules. This model prevents us from inferring and
-  * formalizing the underlying rules; we must abstract over file
-  * systems as inscrutable black boxes. To add further complication
-  * the library allows for multiple `FileSystem` instances to be
-  * simultaneously active.
-  *
-  * Surprisingly the Java library's design gives us a small gift;
-  * a useful layer of path manipulation methods do NOT declare
-  * [[java.io.IOException]] as checked exceptions, which gives us
-  * evidence they are only allowed to perform pure computations.
-  *
-  * This algebra is an attempt to construct a sane interface to
-  * Java's path manipulation mess without curtailing any of its
-  * generality.
-  *
-  * As none of these operations perform IO they are only modeled via
-  * this EDSL instead of pure functions because of their habit of
-  * throwing exceptions on arbitrary inputs. Thus `F` may be eager
-  * without any loss of referential transparency. `F` need only
-  * model partiality and failure to preserve legality.
-  */
 object FSPathLogic {
-  trait Module[F[_]] extends FSPathTypes {
-    def fsPathLogic: FSPathLogic[F, P]
-  }
-
-  // TODO: move FSPath above FSPathLogic
-
-  // TODO: add a function to return a Module in a different F
-
-  // TODO: provide a convenience type for the actual IO types fully
-  // populated and update the example to use it
-
   case object NoParent extends Exception
   case object NoFilename extends Exception
 }
 
-object IsoFSPathLogic {
-  /** Extended interface for interpreters based on live
-    * [[java.nio.file.Path]]
-    *
-    * Interpreters which do not hold live `Path` instances shall
-    * implement [[FSPathLogic.Module]], NOT this.
-    *
-    * The addition of `IsoImmutableUnsafe` gives one the ability to
-    * inject and extract
-    */
-  trait Module[F[_]] extends FSPathLogic.Module[F] {
-    def isoImmutableUnsafe: IsoImmutableUnsafe[P, java.nio.file.Path]
-  }
-}
-
-// TODO: add links to relevant methods on FileSystem and Path
 /** Manipulates Strings and paths in the context of a specific file
   * system's path semantics.
   *
@@ -88,23 +28,24 @@ object IsoFSPathLogic {
   * to/from [[java.io.File]], and watching files for changes. Elided
   * operations involve datatypes we're avoiding and real IO.
   */
-trait FSPathLogic[F[_], P] extends FSPath[F, P] {
+trait FSPathLogic[F[_], A] extends FSPath[F, A] {
   /** Lift a String into a P, failing if the file system doesn't like
     * the cut of its jib. */
-  def path(p: String): F[P]
+  // TODO: Move this to a brand new Paths algebra, may also come from FileSystem algebra
+//  def path(p: String): F[P]
 
   /** Required to be identical to converting `other` to `P` via `path`
     * then passing it to `FSPath.resolve`.
     *
     * Fails only if `other` is unable to be converted to `P`. */
-  def resolve(base: P, other: String): F[P]
+  def resolve[D](base: P[D], other: String): F[P[D]]
 
   /** Required to be identical to converting `other` to `P` via `path`
     * then passing it to `FSPath.resolveSibling`.
     *
     * Fails only if `other` is unable to be converted to `P`.
     */
-  def resolveSibling(base: P, other: String): F[P]
+  def resolveSibling[D](base: P[D], other: String): F[P[D]]
 
   /** Construct a relative path by removing `base` from the beginning
     * of `full`.
@@ -116,7 +57,7 @@ trait FSPathLogic[F[_], P] extends FSPath[F, P] {
     * Fails if `base` and `full` mutually fail to meet arbitrary
     * requirements of the file system.
     */
-  def relativize(base: P, full: P): F[P]
+  def relativize[D](base: P[D], full: P[D]): F[P[D]]
 
   /** Remove the deepest node from the path. None if `p` has zero or
     * one elements.
@@ -124,58 +65,51 @@ trait FSPathLogic[F[_], P] extends FSPath[F, P] {
     * Fails if there's no parent, usually if `p` is empty or contains
     * only one name.
     */
-  def parent(p: P): F[P]
+  def parent[D](p: P[D]): F[P[D]]
 
   /** Deepest name in the path regardless of whether it's a file or
     * directory.
     *
     * Fails only if p is empty.
     */
-  def filename(p: P): F[P]
+  def filename[D](p: P[D]): F[P[D]]
 
   /** Access path names by 0 based index. Root will be 0.
     *
     * Fails if index is out of range.
     */
-  def name(idx: Int, p: P): F[P]
+  def name[D](idx: Int, p: P[D]): F[P[D]]
 
   /** Slice a path.
     *
     * Fails if start < 0 || * end <= start ||
     * end > `FSPath.nameCount`
     */
-  def subpath(p: P, start: Int, end: Int): F[P]
+  def subpath[D](p: P[D], start: Int, end: Int): F[P[D]]
 
   /** Required to be identical to converting prefix to P with `path`
     * the passing it to `FSPath.startsWith`.
     *
     * Fails only if prefix is unable to be converted to `P`.
     */
-  def startsWith(base: P, prefix: String): F[Boolean]
+  def startsWith(base: P[_], prefix: String): F[Boolean]
 
   /** Required to be identical to converting prefix to P with `path`
     * the passing it to `FSPath.endsWith`.
     *
     * Fails only if prefix is unable to be converted to `P`.
     */
-  def endsWith(base: P, suffix: String): F[Boolean]
+  def endsWith(base: P[_], suffix: String): F[Boolean]
 }
 
 object FSPath {
-  trait Module[F[_]] extends FSPathTypes {
-    def fsPathIO: FSPath[F, P]
-  }
-}
-
-object IsoFSPath {
-  trait Module[F[_]] extends FSPath.Module[F] {
-    def isoImmutableUnsafe: IsoImmutableUnsafe[P, java.nio.file.Path]
-  }
+  trait PathTag[A, D]
+  type P[A, D] = @@[_, Tagged[PathTag[A, D]]]
 }
 
 /** Wrapping the fragment of [[java.nio.file.Path]] that is pure
   * and/(or can reasonably be made) total.
-  *
+  ***
   * The `Path` API includes a bunch of partial getters where a
   * reasonable interpretation of the docs shows failure can be
   * avoided by querying other methods. Those getters are wrapped as
@@ -189,10 +123,12 @@ object IsoFSPath {
   * `F` is allowed to be eager and does NOT need to encode errors.
   * Thus `Id` is allowed.
   */
-trait FSPath[F[_], P] {
-  def orderTC: Order[P]
+trait FSPath[F[_], A] {
+  type P[D] = FSPath.P[A, D]
 
-  def string(p: P): F[String]
+  def orderTC[D]: Order[P[D]]
+
+  def string(p: P[_]): F[String]
 
   /** When `other` is absolute just returns `other`.
     * When `other` is empty just returns `base`.
@@ -201,7 +137,7 @@ trait FSPath[F[_], P] {
     * When `other` has no root calculates what `other` references
     * using `base` as a starting point.
     */
-  def resolve(base: P, other: P): F[P]
+  def resolve[D](base: P[D], other: P[D]): F[P[D]]
 
   /** Ideally replaces the deepest name in `base` with `other`.
     * When `base` lacks a parent returns `other` (even if `other`
@@ -211,21 +147,21 @@ trait FSPath[F[_], P] {
     * Otherwise returns `resolve` on `other` and the parent of
     * `base`.
     */
-  def resolveSibling(base: P, other: P): F[P]
+  def resolveSibling[D](base: P[D], other: P[D]): F[P[D]]
 
   /** Some system dependent version of removing redundant path names
     *
     * The docs talk a lot about resolving "." and ".." names in Unix
     * file systems.
     */
-  def normalize(p: P): F[P]
+  def normalize[D](p: P[D]): F[P[D]]
 
   /** Slice a path.
     *
     * Fails if start < 0 || * end <= start ||
     * end > `FSPath.nameCount`
     */
-  def subpathOption(p: P, start: Int, end: Int): F[Option[P]]
+  def subpathOption[D](p: P[D], start: Int, end: Int): F[Option[P[D]]]
 
   /** Remove the deepest node from the path. None if `p` has zero or
     * one elements. Same as `FSPathLogic.requireParent`, but uses
@@ -234,7 +170,7 @@ trait FSPath[F[_], P] {
     * Returns None no parent, usually if `p` is empty or contains
     * only one name.
     */
-  def parentOption(p: P): F[Option[P]]
+  def parentOption[D](p: P[D]): F[Option[P[D]]]
 
   /** Deepest name in the path regardless of whether it's a file or
     * directory. Same as `FSPathLogic.requireFilename`, but uses
@@ -242,34 +178,34 @@ trait FSPath[F[_], P] {
     *
     * Returns None only if p is empty.
     */
-  def filenameOption(p: P): F[Option[P]]
+  def filenameOption[D](p: P[D]): F[Option[P[D]]]
 
   /** Access path names by 0 based index. Root will be 0. Returns None
     * if index is out of range. */
-  def nameOption(idx: Int, p: P): F[Option[P]]
+  def nameOption[D](idx: Int, p: P[D]): F[Option[P[D]]]
 
   /** Extract the file system specific root component from this P if
     * it exists. */
-  def rootOption(p: P): F[Option[P]]
+  def rootOption[D](p: P[D]): F[Option[P[D]]]
 
   /** Does `p` uniquely identify a file/directory location all on its
     * own? */
-  def isAbsolute(p: P): F[Boolean]
+  def isAbsolute(p: P[_]): F[Boolean]
 
   /** How many names constitute `p`? */
-  def nameCount(p: P): F[Int]
+  def nameCount(p: P[_]): F[Int]
 
   /** Determines if `base` starts with the same names as `prefix`.
     *
     * Only checks whole names. Does something unspecified and file
     * system dependent for corner cases with root elements.
     */
-  def startsWith(base: P, prefix: P): F[Boolean]
+  def startsWith[D](base: P[D], prefix: P[D]): F[Boolean]
 
   /** Determines if `base` ends with the same names as `suffix`.
     *
     * Only checks whole names. Does something unspecified and file
     * system dependent for corner cases with root elements.
     */
-  def endsWith(base: P, suffix: P): F[Boolean]
+  def endsWith[D](base: P[D], suffix: P[D]): F[Boolean]
 }

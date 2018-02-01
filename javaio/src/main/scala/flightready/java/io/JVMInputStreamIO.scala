@@ -3,11 +3,10 @@ package flightready.java.io
 import java.io.InputStream
 
 import flightready.integration.effect.ThunkWrap
+import flightready.java.JVMA
 
 
-class JVMInputStreamIO[F[_]](is: InputStream, tw: ThunkWrap[F]) extends InputStreamIO[F] {
-  private[java] def close: F[Unit] = tw(is.close)
-
+class JVMInputStreamIO[F[_]](is: InputStream, tw: ThunkWrap[F]) extends InputStreamIO[F, JVMA] {
   def available: F[Int] = tw(is.available)
 
   def reset: F[Unit] = tw{ reset; () }
@@ -20,4 +19,6 @@ class JVMInputStreamIO[F[_]](is: InputStream, tw: ThunkWrap[F]) extends InputStr
   def readIntoSlice(bytesOut: Array[Byte], ofs: Int, len: Int): F[Int] = tw(is.read(bytesOut, ofs, len))
 
   def skip(n: Long): F[Long] = tw(is.skip(n))
+
+  private[java] def close: F[Unit] = tw(is.close)
 }

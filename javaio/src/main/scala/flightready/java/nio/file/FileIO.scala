@@ -5,57 +5,59 @@ import java.nio.file.StandardOpenOption
 import flightready.integration.effect.Bracket
 import flightready.integration.streaming.ResourceSafety
 import flightready.java.io.InputStreamIO
-import flightready.java.nio.{ByteBufferIO, SeekableByteChannelIO, SeekableByteChannelReadIO, ByteChannelWriteIO}
+import flightready.java.nio.{ ByteChannelWriteIO, SeekableByteChannelIO, SeekableByteChannelReadIO }
 
 object FileIO {
   trait Module[F[_]] {
     def fileIO: FileIO[F, _ <: FileIO.Module[F]]
-
-    type P
-
-    type ByteBufferIOMod <: ByteBufferIO.Module[F]
-    def byteBufferModule: ByteBufferIOMod
   }
 }
 
-trait FileIO[F[_], Mod <: FileIO.Module[F]] extends FileReadIO[F, Mod] with FileWriteIO[F, Mod] {
-  def onByteChannelRWF[X](p: Mod#P, openOptions: OpenRWOption*)
-                         (run: SeekableByteChannelIO[F, Mod#ByteBufferIOMod] => F[X])
+trait FileIO[F[_], A] extends FileReadIO[F, A] with FileWriteIO[F, A] {
+  override type P[D] = FSPath.P[A, D]
+
+  def onByteChannelRWF[X](p: P[_], openOptions: OpenRWOption*)
+                         (run: SeekableByteChannelIO[F, A] => F[X])
                          (implicit brkt: Bracket[F]): F[X]
+
   def onByteChannelRWS[S[_[_], _], I, O]
-                      (p: Mod#P, openOptions: OpenRWOption*)
-                      (run: SeekableByteChannelIO[F, Mod#ByteBufferIOMod] => S[F, I] => S[F, O])
+                      (p: P[_], openOptions: OpenRWOption*)
+                      (run: SeekableByteChannelIO[F, A] => S[F, I] => S[F, O])
                       (implicit rs: ResourceSafety[S, F]): S[F, O]
 }
 
-trait FileReadIO[F[_], Mod <: FileIO.Module[F]] {
-  def readAllBytes(p: Mod#P): F[Array[Byte]]
+trait FileReadIO[F[_], A] {
+  type P[D] = FSPath.P[A, D]
+
+  def readAllBytes(p: P[_]): F[Array[Byte]]
 
   // TODO: add OpenOptions parameter
-  def onInputStreamF[X](p: Mod#P)(run: InputStreamIO[F] => F[X])(implicit brkt: Bracket[F]): F[X]
-  def onInputStreamS[S[_[_], _], X](p: Mod#P)
-                                   (s: InputStreamIO[F] => S[F, X])
+  def onInputStreamF[X](p: P[_])(run: InputStreamIO[F, A] => F[X])(implicit brkt: Bracket[F]): F[X]
+  def onInputStreamS[S[_[_], _], X](p: P[_])
+                                   (s: InputStreamIO[F, A] => S[F, X])
                                    (implicit rs: ResourceSafety[S, F]): S[F, X]
 
-  def onByteChannelROF[X](p: Mod#P, openOption: OpenReadOption*)
-                         (run: SeekableByteChannelReadIO[F, Mod#ByteBufferIOMod] => F[X])
+  def onByteChannelROF[X](p: P[_], openOption: OpenReadOption*)
+                         (run: SeekableByteChannelReadIO[F, A] => F[X])
                          (implicit brkt: Bracket[F]): F[X]
 
-  def onByteChannelROS[S[_[_], _], X](p: Mod#P, openOption: OpenReadOption*)
-                                     (run: SeekableByteChannelReadIO[F, Mod#ByteBufferIOMod] => S[F, X])
+  def onByteChannelROS[S[_[_], _], X](p: P[_], openOption: OpenReadOption*)
+                                     (run: SeekableByteChannelReadIO[F, A] => S[F, X])
                                      (implicit rs: ResourceSafety[S, F]): S[F, X]
 }
 
-trait FileWriteIO[F[_], Mod <: FileIO.Module[F]] {
-  def writeByteArray(p: Mod#P, content: Array[Byte]): F[Mod#P] // TODO: add OpenOptions parameter
+trait FileWriteIO[F[_], A] {
+  type P[D] = FSPath.P[A, D]
+
+  def writeByteArray[D](p: P[D], content: Array[Byte]): F[P[D]] // TODO: add OpenOptions parameter
 
   // TODO: taunt anybody who wants to use size or truncate in append mode and tell them to PR it
-  def onByteChannelAppendF[X](p: Mod#P, openOptions: OpenAppendOption*)
-                             (run: ByteChannelWriteIO[F, Mod#ByteBufferIOMod] => F[X])
+  def onByteChannelAppendF[X](p: P[_], openOptions: OpenAppendOption*)
+                             (run: ByteChannelWriteIO[F, A] => F[X])
                              (implicit brkt: Bracket[F]): F[X]
   def onByteChannelAppendS[S[_[_], _], I, O]
-                          (p: Mod#P, openOptions: OpenAppendOption*)
-                          (run: ByteChannelWriteIO[F, Mod#ByteBufferIOMod] => S[F, I] => S[F, O])
+                          (p: P[_], openOptions: OpenAppendOption*)
+                          (run: ByteChannelWriteIO[F, A] => S[F, I] => S[F, O])
                           (implicit rs: ResourceSafety[S, F]): S[F, O]
 }
 

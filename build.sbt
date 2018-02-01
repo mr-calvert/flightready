@@ -13,7 +13,6 @@ lazy val commonOptions = Seq(
     "-language:implicitConversions",
     "-unchecked",
     "-Xcheckinit",
-    "-Xfatal-warnings",
     "-Xlint:delayedinit-select",
     "-Xlint:doc-detached",
     "-Xlint:inaccessible",

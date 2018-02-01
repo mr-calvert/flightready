@@ -5,7 +5,7 @@ package flightready.java.io
   *
   * The close operation has been elided for type safety.
   */
-trait InputStreamIO[F[_]] {
+trait InputStreamIO[F[_], A] {
   def available: F[Int]
 
   def reset: F[Unit]
@@ -18,4 +18,6 @@ trait InputStreamIO[F[_]] {
   def readIntoSlice(bytesOut: Array[Byte], ofs: Int, len: Int): F[Int]
 
   def skip(n: Long): F[Long]
+
+  private[java] def close: F[Unit]
 }

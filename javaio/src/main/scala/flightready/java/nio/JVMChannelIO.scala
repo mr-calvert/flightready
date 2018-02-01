@@ -4,6 +4,7 @@ import java.nio.channels.{SeekableByteChannel, ReadableByteChannel, WritableByte
 
 import flightready.IsoMutable
 import flightready.integration.effect.ThunkWrap
+import flightready.java.JVMA
 
 
 object JVMByteChannelReadIO {
@@ -15,11 +16,13 @@ object JVMByteChannelReadIO {
     }
 }
 
-class JVMByteChannelReadIO[F[_]](private[nio] val rbc: ReadableByteChannel, tw: ThunkWrap[F])
-      extends ByteChannelReadIO[F, JVMByteBufferModule[F]] {
+class JVMByteChannelReadIO[F[_]](private[nio] val rbc: ReadableByteChannel, tw: ThunkWrap[F]) 
+      extends ByteChannelReadIO[F, JVMA] {
 
-  def read(bbioOut: JVMByteBufferModule[F]#IORW): F[Int] =
+  def read(bbioOut: ByteBufferIO[F, JVMA]): F[Int] =
     tw(rbc.read(JVMByteBufferIO[F](tw).isoMutableRORW.toMutable(bbioOut)))
+
+  private[java] def close: F[Unit] = tw(rbc.close)
 }
 
 
@@ -33,12 +36,12 @@ object JVMByteChannelWriteIO {
 }
 
 class JVMByteChannelWriteIO[F[_]](private[nio] val wbc: WritableByteChannel, tw: ThunkWrap[F])
-      extends ByteChannelWriteIO[F, JVMByteBufferModule[F]] {
+      extends ByteChannelWriteIO[F, JVMA] {
+
+  def write(bbioIn: ByteBufferReadIO[F, JVMA]): F[Int] =
+    tw(wbc.write(JVMByteBufferIO[F](tw).isoMutableRORW.toMutable(bbioIn)))
 
   private[java] def close: F[Unit] = tw(wbc.close)
-
-  def write(bbioIn: JVMByteBufferModule[F]#IORO): F[Int] =
-    tw(wbc.write(JVMByteBufferIO[F](tw).isoMutableRORW.toMutable(bbioIn)))
 }
 
 
@@ -59,9 +62,7 @@ object JVMSeekableByteChannelIO {
 }
 
 class JVMSeekableByteChannelReadIO[F[_]](private[nio] val sbc: SeekableByteChannel, tw: ThunkWrap[F])
-      extends JVMByteChannelReadIO[F](sbc, tw) with SeekableByteChannelReadIO[F, JVMByteBufferModule[F]] {
-
-  private[java] def close: F[Unit] = tw(sbc.close)
+      extends JVMByteChannelReadIO[F](sbc, tw) with SeekableByteChannelReadIO[F, JVMA] {
 
   def position: F[Long] = tw(sbc.position)
   def setPosition(pos: Long): F[Unit] = tw{ sbc.position(pos); () }
@@ -70,8 +71,9 @@ class JVMSeekableByteChannelReadIO[F[_]](private[nio] val sbc: SeekableByteChann
 }
 
 class JVMSeekableByteChannelIO[F[_]](sbc: SeekableByteChannel, tw: ThunkWrap[F])
-    extends JVMSeekableByteChannelReadIO[F](sbc, tw) with SeekableByteChannelIO[F, JVMByteBufferModule[F]] {
+    extends JVMSeekableByteChannelReadIO[F](sbc, tw) with SeekableByteChannelIO[F, JVMA] {
 
   lazy val writeIO = new JVMByteChannelWriteIO[F](sbc, tw)
-  def write(bbioIn: JVMByteBufferModule[F]#IORO): F[Int] = writeIO.write(bbioIn)
+
+  def write(bbioIn: ByteBufferReadIO[F, JVMA]): F[Int] = writeIO.write(bbioIn)
 }
