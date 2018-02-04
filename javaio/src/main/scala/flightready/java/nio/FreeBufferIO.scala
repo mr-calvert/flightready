@@ -3,44 +3,45 @@ package flightready.java.nio
 import java.nio.ByteOrder
 
 import flightready.{ Lift, Term, TermP1 }
+import flightready.FreeA
 
 
-trait BufferReadFs[IOA[X[_], _] <: BufferReadIO[X, B], B] {
-  sealed trait BufferReadF[A[_[_], _]] extends Term[IOA, A]
-  sealed trait BufferReadF1[A] extends BufferReadF[({ type AF[X[_], _] = A })#AF] with TermP1[IOA, A]
+trait BufferReadFs[IO[X[_], _] <: BufferReadIO[X, B], B] {
+  sealed trait BufferReadF[A[_[_], _]] extends Term[IO, A]
+  sealed trait BufferReadF1[A] extends BufferReadF[({ type AF[X[_], _] = A })#AF] with TermP1[IO, A]
 
-  case object Capacity extends BufferReadF1[Int] { def select[F[_]](io: IOA[F, _]): F[Int] = io.capacity }
-  case object IsDirect extends BufferReadF1[Boolean] { def select[F[_]](io: IOA[F, _]): F[Boolean] = io.isDirect }
-  case object Order extends BufferReadF1[ByteOrder] { def select[F[_]](io: IOA[F, _]): F[ByteOrder] = io.order }
-  case object Limit extends BufferReadF1[Int] { def select[F[_]](io: IOA[F, _]): F[Int] = io.limit }
-  case object Mark extends BufferReadF1[Unit] { def select[F[_]](io: IOA[F, _]): F[Unit] = io.mark }
-  case object Position extends BufferReadF1[Int] { def select[F[_]](io: IOA[F, _]): F[Int] = io.position }
-  case object HasRemaining extends BufferReadF1[Boolean] { def select[F[_]](io: IOA[F, _]): F[Boolean] = io.hasRemaining }
-  case object Remaining extends BufferReadF1[Int] { def select[F[_]](io: IOA[F, _]): F[Int] = io.remaining }
-  case object Clear extends BufferReadF1[Unit] { def select[F[_]](io: IOA[F, _]): F[Unit] = io.clear }
-  case object Flip extends BufferReadF1[Unit] { def select[F[_]](io: IOA[F, _]): F[Unit] = io.flip }
-  case object Reset extends BufferReadF1[Unit] { def select[F[_]](io: IOA[F, _]): F[Unit] = io.reset }
-  case object Rewind extends BufferReadF1[Unit] { def select[F[_]](io: IOA[F, _]): F[Unit] = io.rewind }
-  case object Get extends BufferReadF1[B] { def select[F[_]](io: IOA[F, _]): F[B] = io.get }
+  case object Capacity extends BufferReadF1[Int] { def select[F[_]](io: IO[F, _]): F[Int] = io.capacity }
+  case object IsDirect extends BufferReadF1[Boolean] { def select[F[_]](io: IO[F, _]): F[Boolean] = io.isDirect }
+  case object Order extends BufferReadF1[ByteOrder] { def select[F[_]](io: IO[F, _]): F[ByteOrder] = io.order }
+  case object Limit extends BufferReadF1[Int] { def select[F[_]](io: IO[F, _]): F[Int] = io.limit }
+  case object Mark extends BufferReadF1[Unit] { def select[F[_]](io: IO[F, _]): F[Unit] = io.mark }
+  case object Position extends BufferReadF1[Int] { def select[F[_]](io: IO[F, _]): F[Int] = io.position }
+  case object HasRemaining extends BufferReadF1[Boolean] { def select[F[_]](io: IO[F, _]): F[Boolean] = io.hasRemaining }
+  case object Remaining extends BufferReadF1[Int] { def select[F[_]](io: IO[F, _]): F[Int] = io.remaining }
+  case object Clear extends BufferReadF1[Unit] { def select[F[_]](io: IO[F, _]): F[Unit] = io.clear }
+  case object Flip extends BufferReadF1[Unit] { def select[F[_]](io: IO[F, _]): F[Unit] = io.flip }
+  case object Reset extends BufferReadF1[Unit] { def select[F[_]](io: IO[F, _]): F[Unit] = io.reset }
+  case object Rewind extends BufferReadF1[Unit] { def select[F[_]](io: IO[F, _]): F[Unit] = io.rewind }
+  case object Get extends BufferReadF1[B] { def select[F[_]](io: IO[F, _]): F[B] = io.get }
 
   case class SetLimit(limit: Int) extends BufferReadF1[Unit] {
-    def select[F[_]](io: IOA[F, _]): F[Unit] = io.setLimit(limit)
+    def select[F[_]](io: IO[F, _]): F[Unit] = io.setLimit(limit)
   }
   case class SetPosition(position: Int) extends BufferReadF1[Unit] {
-    def select[F[_]](io: IOA[F, _]): F[Unit] = io.setPosition(position)
+    def select[F[_]](io: IO[F, _]): F[Unit] = io.setPosition(position)
   }
   case class GetAt(idx: Int) extends BufferReadF1[B] {
-    def select[F[_]](io: IOA[F, _]): F[B] = io.getAt(idx)
+    def select[F[_]](io: IO[F, _]): F[B] = io.getAt(idx)
   }
   case class GetInto(dst: Array[B]) extends BufferReadF1[Unit] {
-    def select[F[_]](io: IOA[F, _]): F[Unit] = io.getInto(dst)
+    def select[F[_]](io: IO[F, _]): F[Unit] = io.getInto(dst)
   }
   case class GetIntoSlice(dst: Array[B], ofs: Int, len: Int) extends BufferReadF1[Unit] {
-    def select[F[_]](io: IOA[F, _]): F[Unit] = io.getIntoSlice(dst, ofs, len)
+    def select[F[_]](io: IO[F, _]): F[Unit] = io.getIntoSlice(dst, ofs, len)
   }
 
   trait FreeBufferReadIO[F[_]] extends BufferReadIO[F, B] {
-    def l: Lift[IOA, F]
+    def l: Lift[IO, F]
 
     def capacity: F[Int] = l(Capacity)
 
@@ -68,19 +69,19 @@ trait BufferReadFs[IOA[X[_], _] <: BufferReadIO[X, B], B] {
   }
 }
 
-trait BufferFs[IOA[X[_], _] <: BufferIO[X, B], B] extends BufferReadFs[IOA, B] {
+trait BufferFs[IO[X[_], _] <: BufferIO[X, B], B] extends BufferReadFs[IO, B] {
   sealed trait BufferF[A[_[_], _]] extends BufferReadF[A]
-  sealed trait BufferF1[A] extends BufferF[({ type AF[X[_], _] = A })#AF] with TermP1[IOA, A]
+  sealed trait BufferF1[A] extends BufferF[({ type AF[X[_], _] = A })#AF] with TermP1[IO, A]
 
-  case object HasArray extends BufferF1[Boolean] { def select[F[_]](io: IOA[F, _]): F[Boolean] = io.hasArray }
-  case object Array extends BufferF1[Array[B]] { def select[F[_]](io: IOA[F, _]): F[Array[B]] = io.array }
-  case object ArrayOffset extends BufferF1[Int] { def select[F[_]](io: IOA[F, _]): F[Int] = io.arrayOffset }
-  case object Compact extends BufferF1[Unit] { def select[F[_]](io: IOA[F, _]): F[Unit] = io.compact }
-  case class Put(b: B) extends BufferF1[Unit] { def select[F[_]](io: IOA[F, _]): F[Unit] = io.put(b) }
-  case class PutAt(idx: Int, b: B) extends BufferF1[Unit] { def select[F[_]](io: IOA[F, _]): F[Unit] = io.putAt(idx, b) }
-  case class PutArray(as: Array[B]) extends BufferF1[Unit] { def select[F[_]](io: IOA[F, _]): F[Unit] = io.putArray(as) }
+  case object HasArray extends BufferF1[Boolean] { def select[F[_]](io: IO[F, _]): F[Boolean] = io.hasArray }
+  case object Array extends BufferF1[Array[B]] { def select[F[_]](io: IO[F, _]): F[Array[B]] = io.array }
+  case object ArrayOffset extends BufferF1[Int] { def select[F[_]](io: IO[F, _]): F[Int] = io.arrayOffset }
+  case object Compact extends BufferF1[Unit] { def select[F[_]](io: IO[F, _]): F[Unit] = io.compact }
+  case class Put(b: B) extends BufferF1[Unit] { def select[F[_]](io: IO[F, _]): F[Unit] = io.put(b) }
+  case class PutAt(idx: Int, b: B) extends BufferF1[Unit] { def select[F[_]](io: IO[F, _]): F[Unit] = io.putAt(idx, b) }
+  case class PutArray(as: Array[B]) extends BufferF1[Unit] { def select[F[_]](io: IO[F, _]): F[Unit] = io.putArray(as) }
   case class PutArraySlice(as: Array[B], ofs: Int, len: Int) extends BufferF1[Unit] {
-    def select[F[_]](io: IOA[F, _]): F[Unit] = io.putArraySlice(as, ofs, len)
+    def select[F[_]](io: IO[F, _]): F[Unit] = io.putArraySlice(as, ofs, len)
   }
 
   trait FreeBufferIO[F[_]] extends FreeBufferReadIO[F] with BufferIO[F, B] {
@@ -95,66 +96,47 @@ trait BufferFs[IOA[X[_], _] <: BufferIO[X, B], B] extends BufferReadFs[IOA, B] {
   }
 }
 
-class FreeBufferIOModule[F[_]] extends BufferIO.Module[F] {
-  type ByteBufMod = Nothing
-  type CharBufMod = Nothing
-  type ShortBufMod = Nothing
-  type IntBufMod = Nothing
-  type LongBufMod = Nothing
-  type FloatBufMod = Nothing
-  type DoubleBufMod = Nothing
-
-  def byteBufferModule: ByteBufMod = ???
-  def charBufferModule: CharBufMod = ???
-  def doubleBufferModule: DoubleBufMod = ???
-  def floatBufferModule: FloatBufMod = ???
-  def intBufferModule: IntBufMod = ???
-  def longBufferModule: LongBufMod = ???
-  def shortBufferModule: ShortBufMod = ???
-}
-/*
-trait ByteBufferReadFs[IO[X[_] <: ByteBufferReadIO[X, FreeBufferIOModule[F]]]] extends BufferReadFs[IO, Byte] {
-  sealed trait ByteBufferReadF[A[_[_]]] extends BufferReadF[A]
+trait ByteBufferReadFs[IO[X[_], A] <: ByteBufferReadIO[X, A]] extends BufferReadFs[IO, Byte] {
+  sealed trait ByteBufferReadF[A[_[_], _]] extends BufferReadF[A]
 
   case object DuplicateRO extends ByteBufferReadF[ByteBufferReadIO] {
-    def select[F[_]](io: IO[F]): F[ByteBufferReadIO[F]] = io.duplicateRO
+    def selectA[F[_], A](io: IO[F, A]): F[ByteBufferReadIO[F, A]] = io.duplicateRO
   }
   case object SliceRO extends ByteBufferReadF[ByteBufferReadIO] {
-    def select[F[_]](io: IO[F]): F[ByteBufferReadIO[F]] = io.sliceRO
+    def selectA[F[_], A](io: IO[F, A]): F[ByteBufferReadIO[F, A]] = io.sliceRO
   }
   case object AsCharBufferRO extends ByteBufferReadF[CharBufferReadIO] {
-    def select[F[_]](io: IO[F]): F[CharBufferReadIO[F]] = io.asCharBufferRO
+    def selectA[F[_], A](io: IO[F, A]): F[CharBufferReadIO[F, A]] = io.asCharBufferRO
   }
   case object AsShortBufferRO extends ByteBufferReadF[ShortBufferReadIO] {
-    def select[F[_]](io: IO[F]): F[ShortBufferReadIO[F]] = io.asShortBufferRO
+    def selectA[F[_], A](io: IO[F, A]): F[ShortBufferReadIO[F, A]] = io.asShortBufferRO
   }
   case object AsIntBufferRO extends ByteBufferReadF[IntBufferReadIO] {
-    def select[F[_]](io: IO[F]): F[IntBufferReadIO[F]] = io.asIntBufferRO
+    def selectA[F[_], A](io: IO[F, A]): F[IntBufferReadIO[F, A]] = io.asIntBufferRO
   }
   case object AsLongBufferRO extends ByteBufferReadF[LongBufferReadIO] {
-    def select[F[_]](io: IO[F]): F[LongBufferReadIO[F]] = io.asLongBufferRO
+    def selectA[F[_], A](io: IO[F, A]): F[LongBufferReadIO[F, A]] = io.asLongBufferRO
   }
   case object AsFloatBufferRO extends ByteBufferReadF[FloatBufferReadIO] {
-    def select[F[_]](io: IO[F]): F[FloatBufferReadIO[F]] = io.asFloatBufferRO
+    def selectA[F[_], A](io: IO[F, A]): F[FloatBufferReadIO[F, A]] = io.asFloatBufferRO
   }
   case object AsDoubleBufferRO extends ByteBufferReadF[DoubleBufferReadIO] {
-    def select[F[_]](io: IO[F]): F[DoubleBufferReadIO[F]] = io.asDoubleBufferRO
+    def selectA[F[_], A](io: IO[F, A]): F[DoubleBufferReadIO[F, A]] = io.asDoubleBufferRO
   }
 
-  trait FreeByteBufferReadIO[F[_]] extends FreeBufferReadIO[F] with ByteBufferReadIO[F] {
-    def asCharBufferRO: F[CharBufferReadIO[F]] = l.fbound(AsCharBufferRO)
-    def asDoubleBufferRO: F[DoubleBufferReadIO[F]] = l.fbound(AsDoubleBufferRO)
-    def asFloatBufferRO: F[FloatBufferReadIO[F]] = l.fbound(AsFloatBufferRO)
-    def asIntBufferRO: F[IntBufferReadIO[F]] = l.fbound(AsIntBufferRO)
-    def asLongBufferRO: F[LongBufferReadIO[F]] = l.fbound(AsLongBufferRO)
-    def asShortBufferRO: F[ShortBufferReadIO[F]] = l.fbound(AsShortBufferRO)
-    def duplicateRO: F[ByteBufferReadIO[F]] = l.fbound(DuplicateRO)
-    def sliceRO: F[ByteBufferReadIO[F]] = l.fbound(SliceRO)
+  trait FreeByteBufferReadIO[F[_]] extends FreeBufferReadIO[F] with ByteBufferReadIO[F, FreeA] {
+    def asCharBufferRO: F[CharBufferReadIO[F, FreeA]] = l.fbound(AsCharBufferRO)
+    def asDoubleBufferRO: F[DoubleBufferReadIO[F, FreeA]] = l.fbound(AsDoubleBufferRO)
+    def asFloatBufferRO: F[FloatBufferReadIO[F, FreeA]] = l.fbound(AsFloatBufferRO)
+    def asIntBufferRO: F[IntBufferReadIO[F, FreeA]] = l.fbound(AsIntBufferRO)
+    def asLongBufferRO: F[LongBufferReadIO[F, FreeA]] = l.fbound(AsLongBufferRO)
+    def asShortBufferRO: F[ShortBufferReadIO[F, FreeA]] = l.fbound(AsShortBufferRO)
+    def duplicateRO: F[ByteBufferReadIO[F, FreeA]] = l.fbound(DuplicateRO)
+    def sliceRO: F[ByteBufferReadIO[F, FreeA]] = l.fbound(SliceRO)
   }
 }
 
-
-trait ByteBufferReadF[A[_[_]]] extends ByteBufferReadF.ByteBufferReadF[A]
+trait ByteBufferReadF[A[_[_], _]] extends ByteBufferReadF.ByteBufferReadF[A]
 
 object ByteBufferReadF extends ByteBufferReadFs[ByteBufferReadIO]
 
@@ -162,81 +144,82 @@ class FreeByteBufferReadIO[F[_]](implicit val l: Lift[ByteBufferReadIO, F])
   extends ByteBufferReadF.FreeByteBufferReadIO[F]
 
 
-sealed trait ByteBufferF[A[_[_]]] extends ByteBufferF.BaseFs.BufferF[A] with ByteBufferF.BaseFs.ByteBufferReadF[A]
+sealed trait ByteBufferF[A[_[_], _]] extends ByteBufferF.BaseFs.BufferF[A] with ByteBufferF.BaseFs.ByteBufferReadF[A]
 
 object ByteBufferF {
   object BaseFs extends BufferFs[ByteBufferIO, Byte] with ByteBufferReadFs[ByteBufferIO]
 
-  sealed trait ByteBufferF1[A] extends ByteBufferF[({ type AF[_[_]] = A })#AF]
+  sealed trait ByteBufferF1[A] extends ByteBufferF[({ type AF[X[_], _] = A })#AF] with TermP1[ByteBufferIO, A]
 
   case object DuplicateRW extends ByteBufferF[ByteBufferIO] {
-    def select[F[_]](io: ByteBufferIO[F]): F[ByteBufferIO[F]] = io.duplicateRW
+    def selectA[F[_], A](io: ByteBufferIO[F, A]): F[ByteBufferIO[F, A]] = io.duplicateRW
   }
   case object SliceRW extends ByteBufferF[ByteBufferIO] {
-    def select[F[_]](io: ByteBufferIO[F]): F[ByteBufferIO[F]] = io.duplicateRW
+    def selectA[F[_], A](io: ByteBufferIO[F, A]): F[ByteBufferIO[F, A]] = io.duplicateRW
   }
   case class SetByteOrder(bo: ByteOrder) extends ByteBufferF1[Unit] {
-    def select[F[_]](io: ByteBufferIO[F]): F[Unit] = io.setByteOrder(bo)
+    def select[F[_]](io: ByteBufferIO[F, _]): F[Unit] = io.setByteOrder(bo)
   }
   case object AsCharBufferRW extends ByteBufferF[CharBufferIO] {
-    def select[F[_]](io: ByteBufferIO[F]): F[CharBufferIO[F]] = io.asCharBufferRW
+    def selectA[F[_], A](io: ByteBufferIO[F, A]): F[CharBufferIO[F, A]] = io.asCharBufferRW
   }
   case object AsShortBufferRW extends ByteBufferF[ShortBufferIO] {
-    def select[F[_]](io: ByteBufferIO[F]): F[ShortBufferIO[F]] = io.asShortBufferRW
+    def selectA[F[_], A](io: ByteBufferIO[F, A]): F[ShortBufferIO[F, A]] = io.asShortBufferRW
   }
   case object AsIntBufferRW extends ByteBufferF[IntBufferIO] {
-    def select[F[_]](io: ByteBufferIO[F]): F[IntBufferIO[F]] = io.asIntBufferRW
+    def selectA[F[_], A](io: ByteBufferIO[F, A]): F[IntBufferIO[F, A]] = io.asIntBufferRW
   }
   case object AsLongBufferRW extends ByteBufferF[LongBufferIO] {
-    def select[F[_]](io: ByteBufferIO[F]): F[LongBufferIO[F]] = io.asLongBufferRW
+    def selectA[F[_], A](io: ByteBufferIO[F, A]): F[LongBufferIO[F, A]] = io.asLongBufferRW
   }
   case object AsFloatBufferRW extends ByteBufferF[FloatBufferIO] {
-    def select[F[_]](io: ByteBufferIO[F]): F[FloatBufferIO[F]] = io.asFloatBufferRW
+    def selectA[F[_], A](io: ByteBufferIO[F, A]): F[FloatBufferIO[F, A]] = io.asFloatBufferRW
   }
   case object AsDoubleBufferRW extends ByteBufferF[DoubleBufferIO] {
-    def select[F[_]](io: ByteBufferIO[F]): F[DoubleBufferIO[F]] = io.asDoubleBufferRW
+    def selectA[F[_], A](io: ByteBufferIO[F, A]): F[DoubleBufferIO[F, A]] = io.asDoubleBufferRW
   }
-  case class PutBuffer[X[_]](buf: ByteBufferReadIO[X]) extends ByteBufferF1[Unit] {
-    def select[F[_]](io: ByteBufferIO[F]): F[Unit] = ??? // needs issue #50 fixed before implementation
+  case class PutBuffer[X[_]](buf: ByteBufferReadIO[X, FreeA]) extends ByteBufferF[({ type AF[X[_], _] = Unit })#AF] {
+    def selectA[F[_], A](io: ByteBufferIO[F, A]): F[Unit] = ??? //io.putBuffer(buf: ByteBufferReadIO[F, A])
   }
   case class PutChar(c: Char) extends ByteBufferF1[Unit] {
-    def select[F[_]](io: ByteBufferIO[F]): F[Unit] = io.putChar(c)
+    def select[F[_]](io: ByteBufferIO[F, _]): F[Unit] = io.putChar(c)
   }
   case class PutCharAt(idx: Int, c: Char) extends ByteBufferF1[Unit] {
-    def select[F[_]](io: ByteBufferIO[F]): F[Unit] = io.putCharAt(idx, c)
+    def select[F[_]](io: ByteBufferIO[F, _]): F[Unit] = io.putCharAt(idx, c)
   }
   case class PutShort(s: Short) extends ByteBufferF1[Unit] {
-    def select[F[_]](io: ByteBufferIO[F]): F[Unit] = io.putShort(s)
+    def select[F[_]](io: ByteBufferIO[F, _]): F[Unit] = io.putShort(s)
   }
   case class PutShortAt(idx: Int, s: Short) extends ByteBufferF1[Unit] {
-    def select[F[_]](io: ByteBufferIO[F]): F[Unit] = io.putShortAt(idx, s)
+    def select[F[_]](io: ByteBufferIO[F, _]): F[Unit] = io.putShortAt(idx, s)
   }
   case class PutInt(i: Int) extends ByteBufferF1[Unit] {
-    def select[F[_]](io: ByteBufferIO[F]): F[Unit] = io.putInt(i)
+    def select[F[_]](io: ByteBufferIO[F, _]): F[Unit] = io.putInt(i)
   }
   case class PutIntAt(idx: Int, i: Int) extends ByteBufferF1[Unit] {
-    def select[F[_]](io: ByteBufferIO[F]): F[Unit] = io.putIntAt(idx, i)
+    def select[F[_]](io: ByteBufferIO[F, _]): F[Unit] = io.putIntAt(idx, i)
   }
   case class PutLong(l: Long) extends ByteBufferF1[Unit] {
-    def select[F[_]](io: ByteBufferIO[F]): F[Unit] = io.putLong(l)
+    def select[F[_]](io: ByteBufferIO[F, _]): F[Unit] = io.putLong(l)
   }
   case class PutLongAt(idx: Int, l: Long) extends ByteBufferF1[Unit] {
-    def select[F[_]](io: ByteBufferIO[F]): F[Unit] = io.putLongAt(idx, l)
+    def select[F[_]](io: ByteBufferIO[F, _]): F[Unit] = io.putLongAt(idx, l)
   }
   case class PutFloat(f: Float) extends ByteBufferF1[Unit] {
-    def select[F[_]](io: ByteBufferIO[F]): F[Unit] = io.putFloat(f)
+    def select[F[_]](io: ByteBufferIO[F, _]): F[Unit] = io.putFloat(f)
   }
   case class PutFloatAt(idx: Int, f: Float) extends ByteBufferF1[Unit] {
-    def select[F[_]](io: ByteBufferIO[F]): F[Unit] = io.putFloatAt(idx, f)
+    def select[F[_]](io: ByteBufferIO[F, _]): F[Unit] = io.putFloatAt(idx, f)
   }
   case class PutDouble(d: Double) extends ByteBufferF1[Unit] {
-    def select[F[_]](io: ByteBufferIO[F]): F[Unit] = io.putDouble(d)
+    def select[F[_]](io: ByteBufferIO[F, _]): F[Unit] = io.putDouble(d)
   }
   case class PutDoubleAt(idx: Int, d: Double) extends ByteBufferF1[Unit] {
-    def select[F[_]](io: ByteBufferIO[F]): F[Unit] = io.putDoubleAt(idx, d)
+    def select[F[_]](io: ByteBufferIO[F, _]): F[Unit] = io.putDoubleAt(idx, d)
   }
 }
 
+/*
 class FreeByteBufferIO[F[_]](implicit val l: Lift[ByteBufferIO, F])
       extends ByteBufferF.BaseFs.FreeByteBufferReadIO[F] with ByteBufferF.BaseFs.FreeBufferIO[F] with ByteBufferIO[F] {
 
