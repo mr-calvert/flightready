@@ -1,6 +1,8 @@
 # flightready
 [![Build Status](https://travis-ci.org/mr-calvert/flightready.svg?branch=master)](https://travis-ci.org/mr-calvert/flightready)
 
+NOTE: Development is TEMPORARILY paused while I ramp up at a new job with Spunk.
+
 Finally tagless/Free integrations; stdio for FP Scala!
 
 A real introduction is pending.
